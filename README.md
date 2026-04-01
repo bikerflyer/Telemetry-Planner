@@ -18,6 +18,8 @@ eradication operations.
 -   📏 Distance, bearing, and coverage calculations
 -   🧭 Transect definition and metrics
 -   🐚 Sighting capture with structured ecological metadata
+-   🧷 Overlay loading for previous surveys and comparison tracks
+-   📦 Import viewer survey ZIP archives with separate overlays preserved
 -   📦 Mission export (JSON / route plans / ZIP bundles)
 -   🎥 Optional video + telemetry synchronisation support
 
@@ -50,6 +52,7 @@ Designed for:
 -   Frontend: Vanilla JavaScript + Leaflet.js + Turf.js\
 -   Geometry: Deterministic distance, bearing, and area calculations\
 -   Export: Planner JSON, GPX, and mission bundles\
+-   Archive round-trip: survey ZIP reload with overlay separation\
 -   Optional backend integration for validation or processing
 
 ------------------------------------------------------------------------

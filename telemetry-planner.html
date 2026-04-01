@@ -333,6 +333,40 @@ All rights reserved. No redistribution, modification, or reuse without written p
 
         .panel-tab-content { display: none; flex: 1; overflow-y: auto; padding: 0.75rem; min-height: 0; }
         .panel-tab-content.active { display: flex; flex-direction: column; }
+        .overlay-panel { display: flex; flex-direction: column; gap: 0.7rem; min-height: 0; flex: 1; }
+        .overlay-control-header { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+        .overlay-control-title { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+        .overlay-control-body { display: flex; flex-direction: column; gap: 0.6rem; overflow: auto; flex: 1; min-height: 0; }
+        .overlay-list { display: flex; flex-direction: column; gap: 0.55rem; flex: 1; min-height: 0; }
+        .overlay-empty { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; }
+        .overlay-swatch {
+            width: 16px; height: 16px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.9); cursor: pointer; position: relative; flex: 0 0 auto;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.12), 0 6px 14px rgba(0,0,0,0.18); transition: transform 0.16s ease;
+        }
+        .overlay-swatch:hover { transform: scale(1.12); }
+        .overlay-color-picker {
+            position: absolute; top: calc(100% + 0.45rem); left: 0; z-index: 20;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem;
+            padding: 0.45rem; border-radius: 10px; border: 1px solid var(--border);
+            background: rgba(15,23,42,0.94); box-shadow: 0 18px 36px rgba(15,23,42,0.35);
+            min-width: 96px;
+        }
+        .overlay-color-picker[hidden] { display: none !important; }
+        .overlay-color-dot {
+            width: 20px; height: 20px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45);
+            padding: 0; cursor: pointer; transition: transform 0.16s ease, border-color 0.16s ease;
+        }
+        .overlay-color-dot.is-active { border-color: #ffffff; box-shadow: 0 0 0 2px rgba(255,255,255,0.18); }
+        .overlay-color-dot:hover { transform: scale(1.08); }
+        .overlay-name { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+        .overlay-action-btn { min-width: 42px; padding: 0.4rem 0.7rem; }
+        .overlay-action-btn.is-off { opacity: 0.55; }
+        .overlay-select {
+            min-width: 110px; background: var(--bg-secondary); border: 1px solid var(--border);
+            color: var(--text-primary); border-radius: 6px; padding: 0.35rem 0.5rem;
+        }
+        .overlay-save-toggle { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.74rem; color: var(--text-secondary); }
+        .overlay-save-toggle input { accent-color: var(--accent-primary); }
         .sightings-list { flex: 1; overflow-y: auto; }
         .reporting-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
         .reporting-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
@@ -649,7 +683,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
         }
         .lightbox-info .lb-save-btn:hover { opacity: 0.85; }
 
-        .toast-container { position: fixed; bottom: 1rem; right: 1rem; z-index: 20000; display: flex; flex-direction: column; gap: 0.5rem; }
+        .toast-container { position: fixed; bottom: 1rem; right: 1rem; z-index: 2147483647; display: flex; flex-direction: column; gap: 0.5rem; }
         .modal-help-tooltip {
             position: fixed;
             z-index: 21000;
@@ -721,9 +755,9 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 </div>
                 <div class="upload-section" id="gpxUpload">
                     <div class="upload-icon">📍</div>
-                    <div class="upload-text">Drop GPX Track</div>
-                    <div class="upload-hint">GPX file from phone tracker</div>
-                    <input type="file" id="gpxFile" accept=".gpx">
+                    <div class="upload-text">Drop GPX or Survey ZIP</div>
+                    <div class="upload-hint">GPX track or archived survey ZIP from the viewer</div>
+                    <input type="file" id="gpxFile" accept=".gpx,.zip">
                     <div id="gpxInfo" style="display: none;"></div>
                 </div>
             </div>
@@ -765,10 +799,12 @@ All rights reserved. No redistribution, modification, or reuse without written p
                             <strong>Map-only mode</strong><br>Viewing GPX track with sightings
                         </p>
                         <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem; flex-wrap: wrap;">
+                            <button class="btn" id="loadZipBtnMapOnly">📦 Load Survey ZIP</button>
                             <button class="btn" id="loadVideoBtnMapOnly">🎞️ Load Video</button>
                             <button class="btn" id="loadImagesBtn">📷 Load Saved Sightings</button>
                             <button class="btn btn-red" id="resetBtnNoVideo">Reset</button>
                         </div>
+                        <input type="file" id="zipFileMapOnly" accept=".zip" style="display: none;">
                         <input type="file" id="imageFiles" accept="image/*,.jpg,.jpeg,.png" multiple style="display: none;">
                         <div id="imagesLoadedInfo" style="display: none; text-align: center; margin-top: 1rem; color: var(--accent-secondary); font-size: 0.875rem;"></div>
                     </div>
@@ -789,6 +825,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                         <div class="stat-item"><span class="stat-label">Route ETA:</span><span class="stat-value" id="routeEtaDisplay">-</span></div>
                         <div class="stat-item"><span class="stat-label">Boundary Area:</span><span class="stat-value" id="boundaryAreaDisplay">—</span></div>
                     </div>
+                    <input type="file" id="overlayTrackFiles" accept=".gpx,.srt,.zip" multiple style="display:none;">
 
                     <div class="survey-panel" id="surveyPanel">
                         <div class="panel-drag-handle" id="panelDragHandle">
@@ -797,6 +834,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                         </div>
                         <div class="panel-tabs">
                             <button class="panel-tab active" data-tab="survey">Survey Info</button>
+                            <button class="panel-tab" data-tab="overlays">Overlays <span class="tab-count" id="tabOverlayCount">0</span></button>
                             <button class="panel-tab" data-tab="transects">Transects <span class="tab-count" id="tabTransectCount">0</span></button>
                             <button class="panel-tab" data-tab="sightings">Sightings <span class="tab-count" id="tabSightingCount">0</span></button>
                             <button class="panel-tab" data-tab="routes">Routes <span class="tab-count" id="tabRouteCount">0</span></button>
@@ -831,6 +869,19 @@ All rights reserved. No redistribution, modification, or reuse without written p
                             <button class="btn" id="btnDownload" style="display:none; width:100%;">Download ZIP</button>
                                 <div class="progress-bar-container" id="progressBarContainer"><div class="progress-bar" id="progressBar"></div></div>
                                 <div class="submit-status" id="submitStatus"></div>
+                            </div>
+                        </div>
+
+                        <div class="panel-tab-content" id="tabOverlays" data-tab="overlays">
+                            <div class="overlay-panel">
+                                <div class="overlay-control-header">
+                                    <div class="overlay-control-title">Overlays</div>
+                                    <button class="btn btn-sm" id="btnAddOverlayTrack" type="button">+ Add Overlay</button>
+                                </div>
+                                <div class="overlay-control-body">
+                                    <div class="overlay-empty" id="overlayTrackEmpty">No overlay tracks loaded.</div>
+                                    <div class="overlay-list" id="overlayTrackList"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -896,6 +947,8 @@ All rights reserved. No redistribution, modification, or reuse without written p
                             <div class="reporting-grid">
                                 <div class="reporting-section">
                                     <div class="reporting-row">
+                                        <button class="btn btn-secondary" id="btnExportGPX">Save GPX</button>
+                                        <button class="btn btn-secondary" id="btnExportZIP">Archive Survey</button>
                                         <button class="btn btn-secondary" id="btnExportPlannerJSON">Export Route</button>
                                     </div>
                                 </div>
@@ -1193,6 +1246,14 @@ All rights reserved. No redistribution, modification, or reuse without written p
         const STATUS_POLL_INTERVAL = 3000;
         const BIOTA_OPTIONS = ['Caulerpa Exotic','Brown Algae','Fan Worm','Kelp','Seaweed','Urchin','Sponge','Shellfish','Fish','Barren'];
         const BENTHIC_OPTIONS = ['Sand', 'Mud', 'Rock', 'Reef', 'Cobble', 'Shell hash', 'Seagrass', 'Mixed', 'Other'];
+        const OVERLAY_TRACK_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'];
+        const OVERLAY_OPACITY_OPTIONS = [
+            { value: 0.35, label: '35%' },
+            { value: 0.5, label: '50%' },
+            { value: 0.6, label: '60%' },
+            { value: 0.75, label: '75%' },
+            { value: 0.9, label: '90%' }
+        ];
 
         // ============================================================================
         // STATE
@@ -1241,6 +1302,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
         let boundaryCirclePreview = null;
         let routeDrawing = false, routePreviewLine = null;
         let _docListenersBound = false;
+        let overlayTracks = [], overlayTrackLayerGroup = null;
         const BOUNDARY_ATTACH_KM = 0.012; // ~12 meters
         const ROUTE_CONTEXT_ATTACH_KM = 0.003; // ~3 meters — must be nearly on the line
         const BOUNDARY_CONTEXT_ATTACH_KM = 0.003; // ~3 meters — must be nearly on the line
@@ -1310,7 +1372,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
         const AUTOPAN_COOLDOWN_MS = 4000;
         let archiveDisabled = false;
         let hasUnsavedChanges = false, loadedImages = {}, loadedImageFiles = {}, capturedBlobs = {};
-        let currentJobId = null, pollTimer = null, pendingSighting = null, currentLightboxSightingId = null;
+        let currentJobId = null, pollTimer = null, pendingSighting = null, currentLightboxSightingId = null, activeSubmitToast = null;
         let fsTransitioning = false; // [FIX 4] guard against fullscreen event thrashing
         let rafPending = false; // [FIX 6] rAF throttle for timeupdate
         let isProgrammaticPan = false;
@@ -1365,13 +1427,20 @@ All rights reserved. No redistribution, modification, or reuse without written p
         const syncArrow = document.getElementById('syncArrow');
         const loadImagesBtnTop = document.getElementById('loadImagesBtnTop');
         const loadVideoBtnMapOnly = document.getElementById('loadVideoBtnMapOnly');
+        const loadZipBtnMapOnly = document.getElementById('loadZipBtnMapOnly');
+        const zipFileMapOnlyInput = document.getElementById('zipFileMapOnly');
         const exportGpxBtn = document.getElementById('btnExportGPX');
         const exportPlannerJsonBtn = document.getElementById('btnExportPlannerJSON');
         const saveChangesBtn = document.getElementById('saveChangesBtn');
         const sightingsList = document.getElementById('sightingsList');
         const tabSightingCountEl = document.getElementById('tabSightingCount');
         const tabTransectCountEl = document.getElementById('tabTransectCount');
+        const tabOverlayCountEl = document.getElementById('tabOverlayCount');
         const tabRouteCountEl = document.getElementById('tabRouteCount');
+        const overlayTrackInput = document.getElementById('overlayTrackFiles');
+        const addOverlayTrackBtn = document.getElementById('btnAddOverlayTrack');
+        const overlayTrackList = document.getElementById('overlayTrackList');
+        const overlayTrackEmpty = document.getElementById('overlayTrackEmpty');
         const videoControls = document.getElementById('videoControls');
         const noVideoMessage = document.getElementById('noVideoMessage');
         const statusDot = document.getElementById('statusDot');
@@ -1751,11 +1820,25 @@ All rights reserved. No redistribution, modification, or reuse without written p
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); });
         }
 
-        function toast(message, type = 'info', duration = 7000) {
+        function clearToast(toastEl) {
+            if (!toastEl) return;
+            if (toastEl._timeoutId) clearTimeout(toastEl._timeoutId);
+            toastEl.remove();
+        }
+        function clearSubmitToast() {
+            if (!activeSubmitToast) return;
+            clearToast(activeSubmitToast);
+            activeSubmitToast = null;
+        }
+        function toast(message, type = 'info', duration = 7000, options = {}) {
             const el = document.createElement('div');
             el.className = `toast ${type}`; el.textContent = message;
-            toastContainer.appendChild(el);
-            setTimeout(() => el.remove(), duration);
+            if (options.top) toastContainer.prepend(el);
+            else toastContainer.appendChild(el);
+            if (options.sticky !== true) {
+                el._timeoutId = setTimeout(() => clearToast(el), duration);
+            }
+            return el;
         }
         function formatTime(seconds) { if (isNaN(seconds)) return '00:00'; const mins = Math.floor(seconds / 60); const secs = Math.floor(seconds % 60); return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`; }
         function parseGpxClockTime(input) {
@@ -1893,6 +1976,64 @@ All rights reserved. No redistribution, modification, or reuse without written p
         }
         function calculateSpeed(p1, p2) { const dt = (p2.timestamp - p1.timestamp) / 1000; if (dt <= 0) return 0; return (getDistanceFromLatLonInKm(p1.lat, p1.lon, p2.lat, p2.lon) / dt) * 3600; }
         function escapeXml(s) { if (!s) return ''; return s.toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
+        function sanitizeFilename(name, fallback = 'overlay') {
+            const cleaned = String(name || '')
+                .replace(/\\/g, '/')
+                .split('/')
+                .pop()
+                .replace(/\.[^.]+$/, '')
+                .replace(/[^a-z0-9._-]+/gi, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+            return cleaned || fallback;
+        }
+        function getOverlayTrackColor(index) { return OVERLAY_TRACK_COLORS[index % OVERLAY_TRACK_COLORS.length]; }
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = () => reject(reader.error || new Error(`Failed to read ${file.name}`));
+                reader.readAsText(file);
+            });
+        }
+        function getImageMimeType(filename) {
+            const lower = String(filename || '').toLowerCase();
+            if (lower.endsWith('.png')) return 'image/png';
+            if (lower.endsWith('.webp')) return 'image/webp';
+            return 'image/jpeg';
+        }
+        function parseSightingDescription(desc) {
+            if (!desc) return { notes: '', biota: [], biotaOther: '', benthic: '', density: '' };
+            const parts = desc.split('|').map(p=>p.trim()).filter(Boolean);
+            const res = { notes: '', biota: [], biotaOther: '', benthic: '', density: '' };
+            const biotaLookup = new Map(BIOTA_OPTIONS.map(opt => [opt.toLowerCase(), opt]));
+            const freeParts = [];
+            parts.forEach((p) => {
+                if (/^Benthic:/i.test(p)) res.benthic = p.replace(/^Benthic:/i,'').trim();
+                else if (/^Density:/i.test(p)) res.density = p.replace(/^Density:/i,'').trim();
+                else {
+                    const tokens = p.split(',').map(s=>s.trim()).filter(Boolean);
+                    const matched = [], unmatched = [];
+                    tokens.forEach(token => {
+                        const key = token.toLowerCase();
+                        if (biotaLookup.has(key)) matched.push(biotaLookup.get(key));
+                        else unmatched.push(token);
+                    });
+                    if (matched.length) {
+                        matched.forEach(item => { if (!res.biota.includes(item)) res.biota.push(item); });
+                        if (unmatched.length) {
+                            const extra = unmatched.join(', ');
+                            res.biotaOther = res.biotaOther ? `${res.biotaOther}, ${extra}` : extra;
+                        }
+                    } else {
+                        freeParts.push(p);
+                    }
+                }
+            });
+            if (freeParts.length) res.notes = freeParts[0];
+            if (freeParts.length > 1 && !res.biotaOther) res.biotaOther = freeParts.slice(1).join(' | ');
+            return res;
+        }
         function uuid() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8); return v.toString(16); }); }
         function latLngToArray(ll) { return [ll.lat, ll.lng]; }
         function coordKey(lat, lon, precision = 7) {
@@ -1984,6 +2125,614 @@ All rights reserved. No redistribution, modification, or reuse without written p
             if (p.waypointId) return `wp:${p.waypointId}`;
             if (p.boundaryRef) return `ref:${p.boundaryRef}`;
             return `idx:${idx}`;
+        }
+        function createOverlayMarkerIcon(color, fill = '#111827') {
+            return makeCircleDotIcon({ size: 12, border: 2, bg: fill, shadow: `${color}66`, className: 'overlay-waypoint-dot' });
+        }
+        function createOverlaySightingMarkerIcon(sighting, index = 0) {
+            const match = String(sighting?.name || '').match(/(\d+)(?!.*\d)/);
+            const number = match ? Math.min(parseInt(match[1], 10), 99) : Math.min(index + 1, 99);
+            return L.divIcon({
+                className: 'overlay-sighting-marker',
+                html: `<div style="width:12px;height:12px;border:1.5px solid #111827;border-radius:50%;background:#ffffff;color:#111827;box-shadow:0 0 8px rgba(0,0,0,0.28);font-size:6px;font-weight:700;display:flex;align-items:center;justify-content:center;">${number}</div>`,
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+            });
+        }
+        function createPopupImageFrame(src, title, onClick) {
+            const frame = document.createElement('div');
+            frame.style.cssText = 'width:240px;height:165px;margin-top:0.5rem;border-radius:6px;overflow:hidden;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;border:1px solid var(--border);';
+            const img = document.createElement('img');
+            img.src = src;
+            img.title = title || '';
+            img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:6px;cursor:pointer;background:transparent;';
+            if (typeof onClick === 'function') img.addEventListener('click', onClick);
+            frame.appendChild(img);
+            return frame;
+        }
+        function createOverlaySightingPopupContent(sighting) {
+            const wrapper = document.createElement('div');
+            wrapper.style.width = '240px';
+            const title = document.createElement('strong');
+            title.textContent = sighting.name || 'Sighting';
+            wrapper.appendChild(title);
+            if (sighting.notes) {
+                wrapper.appendChild(document.createElement('br'));
+                wrapper.appendChild(document.createTextNode(sighting.notes));
+            }
+            if (sighting.image) {
+                wrapper.appendChild(document.createElement('br'));
+                const src = loadedImages[sighting.image];
+                if (src) {
+                    wrapper.appendChild(createPopupImageFrame(
+                        src,
+                        sighting.image,
+                        () => openLightbox(src, sighting.name || 'Sighting', sighting.notes || '', sighting.lat, sighting.lon, null)
+                    ));
+                } else {
+                    const hint = document.createElement('div');
+                    hint.style.cssText = 'color:#6c757d;font-size:0.75rem;margin-top:0.5rem;';
+                    hint.textContent = `Image: ${sighting.image} (use "Load Images" to display)`;
+                    wrapper.appendChild(hint);
+                }
+            }
+            return wrapper;
+        }
+        function buildOverlayExportFragments(xml) {
+            const serializer = new XMLSerializer();
+            const root = xml.documentElement;
+            if (!root) return '';
+            return Array.from(root.children)
+                .filter(node => ['wpt', 'rte', 'trk'].includes(node.tagName?.toLowerCase()))
+                .map(node => serializer.serializeToString(node))
+                .join('\n  ');
+        }
+        function parseOverlayGPX(gpxText) {
+            const xml = new DOMParser().parseFromString(gpxText, 'text/xml');
+            if (xml.querySelector('parsererror')) throw new Error('Invalid GPX XML');
+
+            const segments = [];
+            let trackNotes = '';
+            Array.from(xml.getElementsByTagName('trk')).forEach(trk => {
+                if (!trackNotes) {
+                    const descNode = trk.getElementsByTagName('desc')[0];
+                    if (descNode?.textContent?.trim()) trackNotes = descNode.textContent.trim();
+                }
+                Array.from(trk.getElementsByTagName('trkseg')).forEach(segNode => {
+                    const segPts = [];
+                    Array.from(segNode.getElementsByTagName('trkpt')).forEach(node => {
+                        const lat = parseFloat(node.getAttribute('lat'));
+                        const lon = parseFloat(node.getAttribute('lon'));
+                        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+                        const timeNode = node.getElementsByTagName('time')[0];
+                        const timestamp = timeNode ? Date.parse(timeNode.textContent.trim()) : null;
+                        segPts.push({ lat, lon, timestamp: Number.isFinite(timestamp) ? timestamp : null });
+                    });
+                    if (segPts.length) segments.push(segPts);
+                });
+            });
+            const points = segments.flat();
+
+            const waypoints = [];
+            const sightings = [];
+            Array.from(xml.getElementsByTagName('wpt')).forEach((node, i) => {
+                const lat = parseFloat(node.getAttribute('lat'));
+                const lon = parseFloat(node.getAttribute('lon'));
+                if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+                const name = node.getElementsByTagName('name')[0]?.textContent?.trim() || `Waypoint ${i + 1}`;
+                const desc = node.getElementsByTagName('desc')[0]?.textContent?.trim() || '';
+                const sym = node.getElementsByTagName('sym')[0]?.textContent?.trim() || '';
+                const linkEl = node.getElementsByTagName('link')[0];
+                const isTransectWpt = (name && name.toLowerCase().includes('transect') && (name.toLowerCase().includes('start') || name.toLowerCase().includes('end'))) || /^Transect:/i.test(desc);
+                if (isTransectWpt) return;
+                const isUserWaypoint = /^User waypoint$/i.test(desc) || /Pin,?\s*Yellow/i.test(sym);
+                if (isUserWaypoint) {
+                    waypoints.push({ name, lat, lon });
+                    return;
+                }
+                let image = linkEl?.getAttribute('href') || null;
+                let notes = desc;
+                if (!image && /Image:/i.test(notes)) {
+                    const matchImg = notes.match(/Image:\s*([^\n]+)/i);
+                    if (matchImg) {
+                        image = matchImg[1].trim();
+                        notes = notes.replace(/\n?Image:[^\n]+/i, '').trim();
+                    }
+                }
+                const parsed = parseSightingDescription(notes);
+                sightings.push({
+                    name,
+                    lat,
+                    lon,
+                    notes: parsed.notes || '',
+                    image,
+                    biota: parsed.biota || [],
+                    biotaOther: parsed.biotaOther || '',
+                    benthic: parsed.benthic || '',
+                    density: parsed.density || ''
+                });
+            });
+
+            const boundarySegments = [];
+            let rulerPoints = [];
+            Array.from(xml.getElementsByTagName('rte')).forEach(rte => {
+                const name = rte.getElementsByTagName('name')[0]?.textContent?.trim() || '';
+                const pts = Array.from(rte.getElementsByTagName('rtept'))
+                    .map(node => ({ lat: parseFloat(node.getAttribute('lat')), lon: parseFloat(node.getAttribute('lon')) }))
+                    .filter(pt => Number.isFinite(pt.lat) && Number.isFinite(pt.lon));
+                if (pts.length < 2) return;
+                if (/^Ruler$/i.test(name)) rulerPoints = pts;
+                else boundarySegments.push({ name, points: pts });
+            });
+
+            if (!points.length && !waypoints.length && !sightings.length && !boundarySegments.length && rulerPoints.length < 2) {
+                throw new Error('No track points or GPX features found');
+            }
+            return {
+                notes: trackNotes,
+                points,
+                segments,
+                waypoints,
+                sightings,
+                boundarySegments,
+                rulerPoints,
+                exportFragments: buildOverlayExportFragments(xml)
+            };
+        }
+        function parseOverlayTrackFile(file, rawText) {
+            const lowerName = (file?.name || '').toLowerCase();
+            if (lowerName.endsWith('.srt')) return parseOverlayGPX(convertSRTtoGPX(rawText));
+            return parseOverlayGPX(rawText);
+        }
+        async function parseOverlayZipFile(file) {
+            const zip = await JSZip.loadAsync(file);
+            const gpxEntry = Object.values(zip.files).find(f => !f.dir && f.name.toLowerCase().endsWith('.gpx'));
+            if (!gpxEntry) throw new Error('No GPX file found in ZIP archive');
+            const parsed = parseOverlayGPX(await gpxEntry.async('text'));
+            const imageEntries = Object.values(zip.files).filter(f => !f.dir && /\.(jpe?g|png|webp)$/i.test(f.name));
+            const embeddedImages = [];
+            for (const entry of imageEntries) {
+                const bare = entry.name.split('/').pop();
+                const mime = getImageMimeType(bare);
+                const blob = new Blob([await entry.async('arraybuffer')], { type: mime });
+                embeddedImages.push(new File([blob], bare, { type: mime }));
+            }
+            return { ...parsed, embeddedImages };
+        }
+        function ensureOverlayLayerGroup() {
+            if (!map) return null;
+            if (!overlayTrackLayerGroup) overlayTrackLayerGroup = L.layerGroup().addTo(map);
+            return overlayTrackLayerGroup;
+        }
+        function renderOverlayTracks() {
+            if (!map) return;
+            if (overlayTrackLayerGroup) overlayTrackLayerGroup.clearLayers();
+            const group = ensureOverlayLayerGroup();
+            overlayTracks.forEach((track, index) => {
+                if (!track.visible) return;
+                const tooltipName = `Overlay ${index + 1}`;
+                const segments = Array.isArray(track.segments) && track.segments.length ? track.segments : (track.points.length ? [track.points] : []);
+                segments.forEach(segment => {
+                    if (!segment.length) return;
+                    const polyline = L.polyline(segment.map(pt => [pt.lat, pt.lon]), {
+                        color: track.color,
+                        weight: 3,
+                        opacity: track.opacity
+                    });
+                    polyline.bindTooltip(tooltipName, { sticky: true });
+                    polyline.addTo(group);
+                });
+                (track.boundarySegments || []).forEach(segment => {
+                    const line = L.polyline(segment.points.map(pt => [pt.lat, pt.lon]), {
+                        color: track.color,
+                        weight: 2,
+                        opacity: Math.min(1, track.opacity + 0.15),
+                        dashArray: '6,4'
+                    });
+                    line.bindTooltip(segment.name || `${tooltipName} boundary`, { sticky: true });
+                    line.addTo(group);
+                });
+                if ((track.rulerPoints || []).length >= 2) {
+                    const rulerLineOverlay = L.polyline(track.rulerPoints.map(pt => [pt.lat, pt.lon]), {
+                        color: track.color,
+                        weight: 2,
+                        opacity: Math.min(1, track.opacity + 0.2),
+                        dashArray: '2,6'
+                    });
+                    rulerLineOverlay.bindTooltip(`${tooltipName} ruler`, { sticky: true });
+                    rulerLineOverlay.addTo(group);
+                }
+                (track.waypoints || []).forEach(wp => {
+                    const marker = L.marker([wp.lat, wp.lon], { icon: createOverlayMarkerIcon(track.color, '#facc15') });
+                    marker.bindTooltip(wp.name || `${tooltipName} waypoint`, { direction: 'top', offset: [0, -8] });
+                    marker.addTo(group);
+                });
+                (track.sightings || []).forEach((sighting, sightingIndex) => {
+                    const marker = L.marker([sighting.lat, sighting.lon], { icon: createOverlaySightingMarkerIcon(sighting, sightingIndex) });
+                    marker.bindTooltip(sighting.name || `${tooltipName} sighting`, { direction: 'top', offset: [0, -8] });
+                    if (sighting.notes || sighting.image) marker.bindPopup(() => createOverlaySightingPopupContent(sighting));
+                    marker.addTo(group);
+                });
+            });
+        }
+        function renderOverlayTrackPanel() {
+            if (!overlayTrackList || !overlayTrackEmpty) return;
+            if (tabOverlayCountEl) tabOverlayCountEl.textContent = String(overlayTracks.length || 0);
+            overlayTrackList.innerHTML = '';
+            overlayTrackEmpty.style.display = overlayTracks.length ? 'none' : 'block';
+            overlayTracks.forEach((track, index) => {
+                const item = document.createElement('div');
+                item.className = 'transect-item';
+
+                const header = document.createElement('div');
+                header.className = 'transect-header';
+                const nameWrap = document.createElement('div');
+                nameWrap.style.display = 'inline-flex';
+                nameWrap.style.alignItems = 'center';
+                nameWrap.style.gap = '0.45rem';
+
+                const swatch = document.createElement('span');
+                swatch.className = 'overlay-swatch';
+                swatch.style.background = track.color;
+                swatch.title = 'Change overlay color';
+
+                const colorPicker = document.createElement('div');
+                colorPicker.className = 'overlay-color-picker';
+                colorPicker.hidden = true;
+                colorPicker.addEventListener('click', e => e.stopPropagation());
+                OVERLAY_TRACK_COLORS.forEach(color => {
+                    const colorDot = document.createElement('button');
+                    colorDot.type = 'button';
+                    colorDot.className = `overlay-color-dot${track.color === color ? ' is-active' : ''}`;
+                    colorDot.style.background = color;
+                    colorDot.addEventListener('click', e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        colorPicker.hidden = true;
+                        track.color = color;
+                        renderOverlayTracks();
+                        renderOverlayTrackPanel();
+                        markUnsaved();
+                    });
+                    colorPicker.appendChild(colorDot);
+                });
+                swatch.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const willOpen = colorPicker.hidden;
+                    document.querySelectorAll('.overlay-color-picker').forEach(el => { el.hidden = true; });
+                    colorPicker.hidden = !willOpen;
+                    if (willOpen) {
+                        setTimeout(() => {
+                            const closeOnOutsideClick = () => { colorPicker.hidden = true; };
+                            document.addEventListener('click', closeOnOutsideClick, { once: true });
+                        }, 0);
+                    }
+                });
+                swatch.appendChild(colorPicker);
+
+                const name = document.createElement('div');
+                name.className = 'overlay-name';
+                name.title = `Overlay ${index + 1}: ${track.filename}`;
+                const overlayNumber = document.createElement('div');
+                overlayNumber.textContent = `Overlay ${index + 1}`;
+                overlayNumber.style.fontWeight = '700';
+                const overlayFilename = document.createElement('div');
+                overlayFilename.textContent = track.filename;
+                overlayFilename.style.fontWeight = '400';
+                overlayFilename.style.fontSize = '0.78rem';
+                overlayFilename.style.lineHeight = '1.25';
+                name.appendChild(overlayNumber);
+                name.appendChild(overlayFilename);
+                nameWrap.appendChild(swatch);
+                nameWrap.appendChild(name);
+                header.appendChild(nameWrap);
+
+                const badge = document.createElement('span');
+                badge.className = 'transect-badge';
+                badge.textContent = `${(track.sightings || []).length} sighting${(track.sightings || []).length === 1 ? '' : 's'}`;
+                header.appendChild(badge);
+                item.appendChild(header);
+
+                const meta = document.createElement('div');
+                meta.className = 'transect-meta';
+                [
+                    `Track points: ${track.points.length || 0}`,
+                    `Waypoints: ${(track.waypoints || []).length || 0}`,
+                    `Boundaries: ${(track.boundarySegments || []).length || 0}`,
+                    `Status: ${track.visible ? 'Visible' : 'Hidden'}`
+                ].forEach(txt => {
+                    const sp = document.createElement('span');
+                    sp.textContent = txt;
+                    meta.appendChild(sp);
+                });
+                item.appendChild(meta);
+
+                const notesArea = document.createElement('textarea');
+                notesArea.className = 'transect-notes';
+                notesArea.placeholder = 'Notes...';
+                notesArea.value = track.notes || '';
+                notesArea.addEventListener('input', () => {
+                    track.notes = notesArea.value;
+                    markUnsaved();
+                });
+                item.appendChild(notesArea);
+
+                const actions = document.createElement('div');
+                actions.className = 'transect-actions';
+                actions.style.flexWrap = 'wrap';
+
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = `btn btn-secondary btn-sm overlay-action-btn${track.visible ? '' : ' is-off'}`;
+                toggleBtn.type = 'button';
+                toggleBtn.textContent = track.visible ? 'Hide' : 'Show';
+                toggleBtn.addEventListener('click', () => {
+                    track.visible = !track.visible;
+                    renderOverlayTracks();
+                    renderOverlayTrackPanel();
+                    markUnsaved();
+                });
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'btn btn-red btn-sm overlay-action-btn';
+                removeBtn.type = 'button';
+                removeBtn.textContent = 'Remove';
+                removeBtn.addEventListener('click', () => {
+                    overlayTracks = overlayTracks.filter(item => item.id !== track.id);
+                    renderOverlayTracks();
+                    renderOverlayTrackPanel();
+                    renderSightings();
+                    updateSubmitButton();
+                    markUnsaved();
+                });
+
+                const loadImagesBtn = document.createElement('button');
+                loadImagesBtn.className = 'btn btn-sm overlay-action-btn';
+                loadImagesBtn.type = 'button';
+                loadImagesBtn.style.background = '#2563eb';
+                loadImagesBtn.style.color = '#fff';
+                loadImagesBtn.textContent = 'Load Images';
+                const hasLinkedImages = (track.sightings || []).some(s => s.image);
+                const hasEmbeddedImages = Array.isArray(track.embeddedImages) && track.embeddedImages.length > 0;
+                loadImagesBtn.disabled = !hasLinkedImages;
+                loadImagesBtn.addEventListener('click', () => {
+                    if (!hasLinkedImages) return;
+                    if (hasEmbeddedImages) {
+                        const addedCount = importImagesIntoLibrary(track.embeddedImages);
+                        const info = document.getElementById('imagesLoadedInfo');
+                        if (info) {
+                            info.textContent = `✓ ${addedCount} image(s) added from ${track.filename}`;
+                            info.style.display = 'block';
+                        }
+                        renderSightings();
+                        renderOverlayTracks();
+                        updateSubmitButton();
+                        toast(`${addedCount} image${addedCount === 1 ? '' : 's'} loaded from ${track.filename}.`, 'success', 3500);
+                        return;
+                    }
+                    document.getElementById('imageFiles')?.click();
+                });
+
+                const opacitySelect = document.createElement('select');
+                opacitySelect.className = 'overlay-select';
+                OVERLAY_OPACITY_OPTIONS.forEach(option => {
+                    const el = document.createElement('option');
+                    el.value = String(option.value);
+                    el.textContent = `Opacity ${option.label}`;
+                    if (Math.abs(track.opacity - option.value) < 0.001) el.selected = true;
+                    opacitySelect.appendChild(el);
+                });
+                opacitySelect.addEventListener('change', () => {
+                    track.opacity = parseFloat(opacitySelect.value);
+                    renderOverlayTracks();
+                    markUnsaved();
+                });
+
+                const saveToggle = document.createElement('label');
+                saveToggle.className = 'overlay-save-toggle';
+                const saveCheckbox = document.createElement('input');
+                saveCheckbox.type = 'checkbox';
+                saveCheckbox.checked = track.includeInExport;
+                saveCheckbox.addEventListener('change', () => {
+                    track.includeInExport = saveCheckbox.checked;
+                    markUnsaved();
+                });
+                const saveText = document.createElement('span');
+                saveText.textContent = 'Save with Export';
+                saveToggle.appendChild(saveCheckbox);
+                saveToggle.appendChild(saveText);
+
+                actions.appendChild(toggleBtn);
+                actions.appendChild(loadImagesBtn);
+                actions.appendChild(removeBtn);
+                actions.appendChild(opacitySelect);
+                actions.appendChild(saveToggle);
+                item.appendChild(actions);
+                overlayTrackList.appendChild(item);
+            });
+        }
+        async function handleOverlayFiles(fileList) {
+            const files = Array.from(fileList || []).filter(file => {
+                const lowerName = file.name.toLowerCase();
+                return lowerName.endsWith('.gpx') || lowerName.endsWith('.srt') || lowerName.endsWith('.zip');
+            });
+            if (!files.length) {
+                alert('Please select one or more GPX, SRT, or survey ZIP files for overlays.');
+                return;
+            }
+            let loadedCount = 0;
+            for (const file of files) {
+                try {
+                    const parsed = file.name.toLowerCase().endsWith('.zip')
+                        ? await parseOverlayZipFile(file)
+                        : parseOverlayTrackFile(file, await readFileAsText(file));
+                    const importedImageCount = Array.isArray(parsed.embeddedImages) && parsed.embeddedImages.length
+                        ? importImagesIntoLibrary(parsed.embeddedImages)
+                        : 0;
+                    overlayTracks.push({
+                        id: uuid(),
+                        filename: file.name,
+                        color: getOverlayTrackColor(overlayTracks.length),
+                        visible: true,
+                        opacity: 0.6,
+                        notes: parsed.notes || '',
+                        includeInExport: true,
+                        points: parsed.points || [],
+                        segments: parsed.segments || [],
+                        waypoints: parsed.waypoints || [],
+                        sightings: parsed.sightings || [],
+                        boundarySegments: parsed.boundarySegments || [],
+                        rulerPoints: parsed.rulerPoints || [],
+                        exportFragments: parsed.exportFragments || '',
+                        embeddedImages: parsed.embeddedImages || []
+                    });
+                    if (importedImageCount) {
+                        const info = document.getElementById('imagesLoadedInfo');
+                        if (info) {
+                            info.textContent = `✓ ${importedImageCount} image(s) added from ${file.name}`;
+                            info.style.display = 'block';
+                        }
+                    }
+                    loadedCount += 1;
+                } catch (err) {
+                    console.error(err);
+                    toast(`Could not load overlay ${file.name}: ${err.message}`, 'error', 5000);
+                }
+            }
+            if (overlayTrackInput) overlayTrackInput.value = '';
+            renderOverlayTracks();
+            renderOverlayTrackPanel();
+            renderSightings();
+            updateSubmitButton();
+            if (loadedCount) toast(`${loadedCount} overlay track${loadedCount === 1 ? '' : 's'} loaded.`, 'success', 3500);
+        }
+        function getOverlayTracksForExport() {
+            return overlayTracks.filter(track => track.includeInExport);
+        }
+        function generateOverlayTracksXml() {
+            return getOverlayTracksForExport().map(track => {
+                let xml = '';
+                const segments = Array.isArray(track.segments) && track.segments.length ? track.segments : (track.points.length ? [track.points] : []);
+                if (segments.length) {
+                    xml += `\n  <trk><name>${escapeXml(track.filename)}</name>`;
+                    if (track.notes) xml += `\n    <desc>${escapeXml(track.notes)}</desc>`;
+                    segments.forEach(segment => {
+                        xml += `\n    <trkseg>`;
+                        segment.forEach(point => {
+                            xml += `\n      <trkpt lat="${point.lat}" lon="${point.lon}">`;
+                            if (point.timestamp != null) xml += `<time>${new Date(point.timestamp).toISOString()}</time>`;
+                            xml += `</trkpt>`;
+                        });
+                        xml += `\n    </trkseg>`;
+                    });
+                    xml += `\n  </trk>`;
+                }
+                (track.waypoints || []).forEach((wp, index) => {
+                    xml += `\n  <wpt lat="${wp.lat}" lon="${wp.lon}"><name>${escapeXml(wp.name || `Waypoint ${index + 1}`)}</name><desc>User waypoint</desc><sym>Pin, Yellow</sym></wpt>`;
+                });
+                (track.sightings || []).forEach((s, index) => {
+                    const name = s.name || `Sighting ${index + 1}`;
+                    const descParts = [
+                        s.notes,
+                        s.biota?.length ? s.biota.join(', ') : '',
+                        s.biotaOther,
+                        s.benthic ? `Benthic: ${s.benthic}` : '',
+                        s.density ? `Density: ${s.density}` : ''
+                    ].filter(Boolean);
+                    const desc = descParts.join(' | ') || 'Sighting';
+                    xml += `\n  <wpt lat="${s.lat}" lon="${s.lon}"><name>${escapeXml(name)}</name><desc>${escapeXml(desc)}</desc><sym>Flag, Red</sym>${s.image ? `\n    <link href="${escapeXml(s.image)}"><text>Sighting Photo</text></link>` : ''}</wpt>`;
+                });
+                (track.boundarySegments || []).forEach((segment, index) => {
+                    if (!segment?.points?.length) return;
+                    xml += `\n  <rte><name>${escapeXml(segment.name || `Boundary ${index + 1}`)}</name>`;
+                    segment.points.forEach(point => {
+                        xml += `\n    <rtept lat="${point.lat}" lon="${point.lon}"></rtept>`;
+                    });
+                    xml += `\n  </rte>`;
+                });
+                if (Array.isArray(track.rulerPoints) && track.rulerPoints.length >= 2) {
+                    xml += `\n  <rte><name>Ruler</name>`;
+                    track.rulerPoints.forEach(point => {
+                        xml += `\n    <rtept lat="${point.lat}" lon="${point.lon}"></rtept>`;
+                    });
+                    xml += `\n  </rte>`;
+                }
+                return xml;
+            }).join('');
+        }
+        function generateOverlayTrackGpx(track) {
+            let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="ROV Telemetry Planner v1.0" xmlns="http://www.topografix.com/GPX/1/1">`;
+            const segments = Array.isArray(track.segments) && track.segments.length ? track.segments : (track.points.length ? [track.points] : []);
+            if (segments.length) {
+                xml += `\n  <trk><name>${escapeXml(track.filename)}</name>`;
+                if (track.notes) xml += `\n    <desc>${escapeXml(track.notes)}</desc>`;
+                segments.forEach(segment => {
+                    xml += `\n    <trkseg>`;
+                    segment.forEach(point => {
+                        xml += `\n      <trkpt lat="${point.lat}" lon="${point.lon}">`;
+                        if (point.timestamp != null) xml += `<time>${new Date(point.timestamp).toISOString()}</time>`;
+                        xml += `</trkpt>`;
+                    });
+                    xml += `\n    </trkseg>`;
+                });
+                xml += `\n  </trk>`;
+            }
+            (track.waypoints || []).forEach((wp, index) => {
+                xml += `\n  <wpt lat="${wp.lat}" lon="${wp.lon}"><name>${escapeXml(wp.name || `Waypoint ${index + 1}`)}</name><desc>User waypoint</desc><sym>Pin, Yellow</sym></wpt>`;
+            });
+            (track.sightings || []).forEach((s, index) => {
+                const name = s.name || `Sighting ${index + 1}`;
+                const descParts = [
+                    s.notes,
+                    s.biota?.length ? s.biota.join(', ') : '',
+                    s.biotaOther,
+                    s.benthic ? `Benthic: ${s.benthic}` : '',
+                    s.density ? `Density: ${s.density}` : ''
+                ].filter(Boolean);
+                const desc = descParts.join(' | ') || 'Sighting';
+                xml += `\n  <wpt lat="${s.lat}" lon="${s.lon}"><name>${escapeXml(name)}</name><desc>${escapeXml(desc)}</desc><sym>Flag, Red</sym>${s.image ? `\n    <link href="${escapeXml(s.image)}"><text>Sighting Photo</text></link>` : ''}</wpt>`;
+            });
+            (track.boundarySegments || []).forEach((segment, index) => {
+                if (!segment?.points?.length) return;
+                xml += `\n  <rte><name>${escapeXml(segment.name || `Boundary ${index + 1}`)}</name>`;
+                segment.points.forEach(point => {
+                    xml += `\n    <rtept lat="${point.lat}" lon="${point.lon}"></rtept>`;
+                });
+                xml += `\n  </rte>`;
+            });
+            if (Array.isArray(track.rulerPoints) && track.rulerPoints.length >= 2) {
+                xml += `\n  <rte><name>Ruler</name>`;
+                track.rulerPoints.forEach(point => {
+                    xml += `\n    <rtept lat="${point.lat}" lon="${point.lon}"></rtept>`;
+                });
+                xml += `\n  </rte>`;
+            }
+            xml += `\n</gpx>`;
+            return xml;
+        }
+        function getOverlayImageNamesForExport() {
+            return Array.from(new Set(
+                getOverlayTracksForExport().flatMap(track => (track.sightings || []).map(s => s?.image).filter(Boolean))
+            ));
+        }
+        function getOverlaySightingsForExport() {
+            return getOverlayTracksForExport().flatMap(track => track.sightings || []);
+        }
+        function getOverlaySightingsForDisplay() {
+            return overlayTracks.map((track, index) => ({
+                overlayId: track.id,
+                overlayIndex: index + 1,
+                overlayColor: track.color,
+                overlayName: track.filename,
+                sightings: (track.sightings || []).map((sighting, sightingIndex) => ({
+                    ...sighting,
+                    id: `overlay-${track.id}-${sightingIndex}`,
+                    overlayId: track.id,
+                    overlayIndex: index + 1,
+                    overlayColor: track.color,
+                    overlayName: track.filename
+                }))
+            })).filter(group => group.sightings.length);
         }
 
         function addWaypointMarker(wp, group) {
@@ -3084,11 +3833,34 @@ All rights reserved. No redistribution, modification, or reuse without written p
         [videoUploadZone, gpxUploadZone].forEach(zone => {
             zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
             zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-            zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); if (e.dataTransfer.files.length) { zone === videoUploadZone ? handleVideoFile(e.dataTransfer.files[0]) : handleGPXFile(e.dataTransfer.files[0]); } });
+            zone.addEventListener('drop', e => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                if (!e.dataTransfer.files.length) return;
+                const file = e.dataTransfer.files[0];
+                if (zone === videoUploadZone) handleVideoFile(file);
+                else if (file.name.toLowerCase().endsWith('.zip')) handleZIPFile(file);
+                else handleGPXFile(file);
+            });
         });
 
         videoFileInput.addEventListener('change', e => { if (e.target.files.length) handleVideoFile(e.target.files[0]); });
-        gpxFileInput.addEventListener('change', e => { if (e.target.files.length) { handleGPXFile(e.target.files[0]); enableArchive(); } });
+        gpxFileInput.addEventListener('change', e => {
+            if (!e.target.files.length) return;
+            const file = e.target.files[0];
+            if (file.name.toLowerCase().endsWith('.zip')) handleZIPFile(file);
+            else handleGPXFile(file);
+            enableArchive();
+            e.target.value = '';
+        });
+        if (loadZipBtnMapOnly) loadZipBtnMapOnly.addEventListener('click', () => zipFileMapOnlyInput?.click());
+        if (zipFileMapOnlyInput) zipFileMapOnlyInput.addEventListener('change', e => {
+            if (!e.target.files.length) return;
+            handleZIPFile(e.target.files[0]);
+            e.target.value = '';
+        });
+        if (addOverlayTrackBtn) addOverlayTrackBtn.addEventListener('click', () => overlayTrackInput?.click());
+        if (overlayTrackInput) overlayTrackInput.addEventListener('change', e => { if (e.target.files?.length) handleOverlayFiles(e.target.files); });
 
         function handleVideoFile(file) {
             const isVideoMime = file.type && file.type.startsWith('video/');
@@ -3125,7 +3897,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
         }
 
         function handleGPXFile(file) {
-            if (!file.name.endsWith('.gpx')) { alert('Please select a GPX file'); return; }
+            if (!file.name.toLowerCase().endsWith('.gpx')) { alert('Please select a GPX file'); return; }
             const reader = new FileReader();
             reader.onload = e => { gpxRawXml = e.target.result; parseGPX(gpxRawXml);
                 const info = document.getElementById('gpxInfo');
@@ -3141,6 +3913,82 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 info.style.display = 'block'; checkReadyToView();
             };
             reader.readAsText(file);
+        }
+
+        async function handleZIPFile(file) {
+            try {
+                toast('Loading survey ZIP...', 'info', 3000);
+                const zip = await JSZip.loadAsync(file);
+                const gpxFiles = Object.values(zip.files).filter(f => !f.dir && f.name.toLowerCase().endsWith('.gpx'));
+                const overlayGpxEntries = gpxFiles.filter(f => f.name.startsWith('overlays/'));
+                const gpxEntry = gpxFiles.find(f => !f.name.startsWith('overlays/')) || gpxFiles[0];
+                if (!gpxEntry) { alert('No GPX file found in ZIP archive.'); return; }
+
+                gpxRawXml = await gpxEntry.async('text');
+                parseGPX(gpxRawXml);
+                overlayTracks = [];
+
+                const imageEntries = Object.values(zip.files).filter(f => !f.dir && /\.(jpe?g|png|webp)$/i.test(f.name));
+                let imageCount = 0;
+                for (const entry of imageEntries) {
+                    const bare = entry.name.split('/').pop();
+                    const mime = getImageMimeType(bare);
+                    const blob = new Blob([await entry.async('arraybuffer')], { type: mime });
+                    const existing = loadedImages[bare];
+                    if (typeof existing === 'string' && existing.startsWith('blob:')) URL.revokeObjectURL(existing);
+                    loadedImages[bare] = URL.createObjectURL(blob);
+                    loadedImageFiles[bare] = new File([blob], bare, { type: mime });
+                    imageCount += 1;
+                }
+
+                for (const entry of overlayGpxEntries) {
+                    try {
+                        const parsed = parseOverlayGPX(await entry.async('text'));
+                        overlayTracks.push({
+                            id: uuid(),
+                            filename: entry.name.split('/').pop(),
+                            color: getOverlayTrackColor(overlayTracks.length),
+                            visible: true,
+                            opacity: 0.6,
+                            notes: parsed.notes || '',
+                            includeInExport: true,
+                            points: parsed.points || [],
+                            segments: parsed.segments || [],
+                            waypoints: parsed.waypoints || [],
+                            sightings: parsed.sightings || [],
+                            boundarySegments: parsed.boundarySegments || [],
+                            rulerPoints: parsed.rulerPoints || [],
+                            exportFragments: parsed.exportFragments || '',
+                            embeddedImages: []
+                        });
+                    } catch (err) {
+                        console.error(err);
+                        toast(`Could not load saved overlay ${entry.name}: ${err.message}`, 'error', 5000);
+                    }
+                }
+
+                const info = document.getElementById('gpxInfo');
+                info.textContent = '';
+                const fi = document.createElement('div'); fi.className = 'file-info';
+                const ic = document.createElement('div'); ic.className = 'file-icon'; ic.textContent = '📦'; fi.appendChild(ic);
+                const det = document.createElement('div'); det.className = 'file-details';
+                const fn = document.createElement('div'); fn.className = 'file-name'; fn.textContent = file.name; det.appendChild(fn);
+                const fs = document.createElement('div'); fs.className = 'file-size'; fs.textContent = formatFileSize(file.size); det.appendChild(fs);
+                fi.appendChild(det);
+                const rb = document.createElement('button'); rb.className = 'remove-btn'; rb.textContent = '×'; rb.addEventListener('click', clearGPX); fi.appendChild(rb);
+                info.appendChild(fi);
+                info.style.display = 'block';
+
+                checkReadyToView();
+                renderSightings();
+                renderOverlayTracks();
+                renderOverlayTrackPanel();
+                updateSubmitButton();
+                toast(`Survey ZIP loaded: ${sightings.length} survey sighting(s), ${overlayTracks.length} overlay(s), ${imageCount} image(s) restored.`, 'success', 6000);
+            } catch (err) {
+                console.error(err);
+                alert('Error loading ZIP: ' + err.message);
+            }
         }
 
         // ============================================================================
@@ -3223,27 +4071,6 @@ All rights reserved. No redistribution, modification, or reuse without written p
             document.getElementById('trackDistDisplay').textContent = trackTotalKm >= 1 ? `${trackTotalKm.toFixed(3)} km` : `${(trackTotalKm*1000).toFixed(1)} m`;
 
             const wpts = doc.getElementsByTagName('wpt');
-            const parseDesc = (desc) => {
-                if (!desc) return { notes: '', biota: [], biotaOther: '', benthic: '', density: '' };
-                const parts = desc.split('|').map(p=>p.trim()).filter(Boolean);
-                const res = { notes: '', biota: [], biotaOther: '', benthic: '', density: '' };
-                const biotaLookup = new Map(BIOTA_OPTIONS.map(opt => [opt.toLowerCase(), opt]));
-                const freeParts = [];
-                parts.forEach((p) => {
-                    if (/^Benthic:/i.test(p)) res.benthic = p.replace(/^Benthic:/i,'').trim();
-                    else if (/^Density:/i.test(p)) res.density = p.replace(/^Density:/i,'').trim();
-                    else {
-                        const tokens = p.split(',').map(s=>s.trim()).filter(Boolean);
-                        const matched = [], unmatched = [];
-                        tokens.forEach(token => { const key = token.toLowerCase(); if (biotaLookup.has(key)) matched.push(biotaLookup.get(key)); else unmatched.push(token); });
-                        if (matched.length) { matched.forEach(item => { if (!res.biota.includes(item)) res.biota.push(item); }); if (unmatched.length) { const extra = unmatched.join(', '); res.biotaOther = res.biotaOther ? `${res.biotaOther}, ${extra}` : extra; } }
-                        else freeParts.push(p);
-                    }
-                });
-                if (freeParts.length) res.notes = freeParts[0];
-                if (freeParts.length > 1 && !res.biotaOther) res.biotaOther = freeParts.slice(1).join(' | ');
-                return res;
-            };
             for (let i = 0; i < wpts.length; i++) {
                 const w = wpts[i]; const lat = parseFloat(w.getAttribute('lat')), lon = parseFloat(w.getAttribute('lon'));
                 const nameEl = w.getElementsByTagName('name')[0]; const descEl = w.getElementsByTagName('desc')[0];
@@ -3261,7 +4088,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                     waypoints.push(wp);
                     continue;
                 }
-                let notes = desc; const parsed = parseDesc(notes); notes = parsed.notes || notes;
+                let notes = desc; const parsed = parseSightingDescription(notes); notes = parsed.notes || '';
                 const ts = timeEl ? new Date(timeEl.textContent).getTime() : gpxData[0]?.timestamp || Date.now();
                 let imageFilename = null;
                 if (linkEl) imageFilename = linkEl.getAttribute('href');
@@ -3410,6 +4237,8 @@ All rights reserved. No redistribution, modification, or reuse without written p
             initMap(); surveyPanel.classList.add('visible');
             if (gpxData.length) document.getElementById('inputDate').value = formatLocalDateISO(gpxData[0].timestamp);
             if (sightings.length) { renderSightings(); sightings.forEach(s => addSightingToMap(s)); }
+            renderOverlayTracks();
+            renderOverlayTrackPanel();
             hasUnsavedChanges = false; updateSubmitButton();
         }
         }
@@ -3421,6 +4250,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
             if (map) map.remove();
             boundaryLabelMarkers = [];
             rulerLine = null; rulerArrow = null; rulerMarkers = []; measureStart = null; measurePending = false;
+            overlayTrackLayerGroup = null;
             map = L.map('map').setView([gpxData[0].lat, gpxData[0].lon], 15);
             map.on('movestart', () => { if (!isProgrammaticPan) lastUserPanAt = Date.now(); });
             const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
@@ -4241,12 +5071,14 @@ All rights reserved. No redistribution, modification, or reuse without written p
         function renderSightings() {
             // Keep map markers in sync with current sighting list (including bulk deletes).
             syncSightingMarkersToSightings();
-            if (!sightings.length) {
+            const overlayGroups = getOverlaySightingsForDisplay();
+            const totalSightings = sightings.length + overlayGroups.reduce((sum, group) => sum + group.sightings.length, 0);
+            if (!totalSightings) {
                 sightingsList.innerHTML = '<div class="empty-sightings">No sightings yet. Click "Add Sighting" when you spot something.</div>';
                 if (tabSightingCountEl) tabSightingCountEl.textContent = '0';
                 return;
             }
-            if (tabSightingCountEl) tabSightingCountEl.textContent = sightings.length;
+            if (tabSightingCountEl) tabSightingCountEl.textContent = String(totalSightings);
             sightingsList.textContent = '';
             sightings.slice().reverse().forEach(s => {
                 const item = document.createElement('div'); item.className = 'sighting-item'; item.dataset.id = s.id;
@@ -4274,6 +5106,84 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 const notesInput = document.createElement('input'); notesInput.type = 'text'; notesInput.className = 'sighting-notes-input'; notesInput.dataset.sightingId = s.id; notesInput.placeholder = 'Notes...'; notesInput.value = s.notes || ''; item.appendChild(notesInput);
                 sightingsList.appendChild(item);
             });
+            overlayGroups.forEach(group => {
+                const section = document.createElement('div');
+                section.style.cssText = 'display:flex;align-items:center;gap:0.45rem;margin:0.45rem 0 0.2rem;';
+                const swatch = document.createElement('span');
+                swatch.style.cssText = `width:12px;height:12px;border-radius:999px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,0.12);background:${group.overlayColor};`;
+                const label = document.createElement('strong');
+                label.textContent = `Overlay ${group.overlayIndex}: ${group.overlayName}`;
+                section.appendChild(swatch);
+                section.appendChild(label);
+                sightingsList.appendChild(section);
+                group.sightings.forEach(s => {
+                    const item = document.createElement('div');
+                    item.className = 'sighting-item';
+                    item.dataset.id = s.id;
+                    item.dataset.overlaySighting = 'true';
+                    const header = document.createElement('div');
+                    header.className = 'sighting-header';
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'sighting-name';
+                    nameSpan.textContent = s.name;
+                    header.appendChild(nameSpan);
+                    item.appendChild(header);
+                    const details = document.createElement('div');
+                    details.className = 'sighting-details';
+                    const timeDiv = document.createElement('div');
+                    timeDiv.className = 'sighting-time';
+                    timeDiv.textContent = `📦 ${s.overlayName}`;
+                    details.appendChild(timeDiv);
+                    const coordDiv = document.createElement('div');
+                    coordDiv.textContent = '📍 ' + s.lat.toFixed(6) + ', ' + s.lon.toFixed(6);
+                    details.appendChild(coordDiv);
+                    item.appendChild(details);
+                    const tags = [];
+                    if (s.biota?.length) tags.push(...s.biota);
+                    if (s.biotaOther) tags.push(s.biotaOther);
+                    if (s.benthic) tags.push(s.benthic);
+                    if (s.density) tags.push('Density: ' + s.density);
+                    if (tags.length) {
+                        const tagsDiv = document.createElement('div');
+                        tagsDiv.className = 'sighting-meta-tags';
+                        tags.forEach(t => {
+                            const span = document.createElement('span');
+                            span.className = 'sighting-tag';
+                            span.textContent = t;
+                            tagsDiv.appendChild(span);
+                        });
+                        item.appendChild(tagsDiv);
+                    }
+                    if (s.image) {
+                        const src = loadedImages[s.image];
+                        if (src) {
+                            const imgContainer = document.createElement('div');
+                            imgContainer.style.cssText = 'margin-top:0.5rem;cursor:pointer;';
+                            imgContainer.className = 'sighting-image-container';
+                            imgContainer.dataset.image = src;
+                            imgContainer.dataset.name = s.name;
+                            imgContainer.dataset.notes = s.notes || '';
+                            imgContainer.dataset.lat = s.lat;
+                            imgContainer.dataset.lon = s.lon;
+                            imgContainer.dataset.id = '';
+                            const img = document.createElement('img');
+                            img.src = src;
+                            img.style.cssText = 'width:100%;border-radius:4px;object-fit:cover;height:80px;';
+                            img.title = s.image;
+                            imgContainer.appendChild(img);
+                            item.appendChild(imgContainer);
+                        }
+                    }
+                    if (s.notes) {
+                        const notes = document.createElement('div');
+                        notes.className = 'sighting-details';
+                        notes.style.marginTop = '0.45rem';
+                        notes.textContent = s.notes;
+                        item.appendChild(notes);
+                    }
+                    sightingsList.appendChild(item);
+                });
+            });
         }
 
         // [FIX 9] Single merged click handler for sightings list
@@ -4283,6 +5193,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
             if (e.target.classList.contains('sighting-delete')) { e.stopPropagation(); deleteSighting(e, e.target.dataset.sightingId); return; }
             if (e.target.classList.contains('sighting-notes-input')) { e.stopPropagation(); return; }
             const item = e.target.closest('.sighting-item');
+            if (item?.dataset.overlaySighting === 'true') return;
             if (item && !e.target.matches('input,button')) jumpToSighting(item.dataset.id);
         });
         sightingsList.addEventListener('change', e => { if (e.target.classList.contains('sighting-notes-input')) updateSightingNotes(e.target.dataset.sightingId, e.target.value); });
@@ -6859,7 +7770,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
             setTimeout(() => URL.revokeObjectURL(url), 120);
         });
 
-        function generateGPXWithWaypoints() {
+        function generateGPXWithWaypoints(includeOverlays = true) {
             const surveyInfo = {
                 agency: document.getElementById('inputAgency')?.value?.trim() || '',
                 survey_name: document.getElementById('inputSurveyName')?.value?.trim() || '',
@@ -6940,7 +7851,9 @@ All rights reserved. No redistribution, modification, or reuse without written p
             }
             xml += `\n  <trk><name>Survey Track</name><trkseg>`;
             gpxData.forEach(p => { xml += `\n      <trkpt lat="${p.lat}" lon="${p.lon}"><time>${new Date(p.timestamp).toISOString()}</time></trkpt>`; });
-            xml += `\n    </trkseg></trk>\n</gpx>`;
+            xml += `\n    </trkseg></trk>`;
+            if (includeOverlays) xml += generateOverlayTracksXml();
+            xml += `\n</gpx>`;
             return xml;
         }
 
@@ -6956,41 +7869,105 @@ All rights reserved. No redistribution, modification, or reuse without written p
             if (exportZipBtn) { exportZipBtn.disabled = false; exportZipBtn.title = ''; }
             archiveDisabled = false;
         }
+        function updateArchiveAvailability() {
+            const missingMain = sightings.filter(s => !capturedBlobs[s.id] && !(s.image && loadedImageFiles[s.image]));
+            const missingOverlay = getOverlaySightingsForExport().filter(s => s?.image && !loadedImageFiles[s.image]);
+            const missing = [...missingMain, ...missingOverlay];
+            if (missing.length === 0) enableArchive();
+            else disableArchive(`${missing.length} sighting image(s) require a loaded video to capture`);
+        }
         if (exportZipBtn) exportZipBtn.addEventListener('click', async () => {
             if (!gpxData) { alert('No GPX data loaded'); return; }
-            if (!sightings.length) { alert('No sightings to package.'); return; }
-            if (!videoPlayer.duration || videoPlayer.readyState < 2) { alert('Video not loaded properly.'); return; }
-            const wasPlaying = !videoPlayer.paused; const origTime = videoPlayer.currentTime; videoPlayer.pause();
+            const exportOverlaySightings = getOverlaySightingsForExport();
+            if (!sightings.length && !exportOverlaySightings.length) { alert('No sightings to package.'); return; }
+            const missingImages = sightings
+                .filter(s => !capturedBlobs[s.id] && !(s.image && loadedImageFiles[s.image]))
+                .map(s => s.name || s.image || `Sighting ${s.id}`);
+            exportOverlaySightings
+                .filter(s => s?.image && !loadedImageFiles[s.image])
+                .forEach(s => missingImages.push(s.name || s.image || 'Overlay sighting'));
+            const canCaptureFromVideo = !!(videoPlayer.duration && videoPlayer.readyState >= 2);
+            if (missingImages.length && !canCaptureFromVideo) {
+                alert(`Cannot archive ${missingImages.length} sighting image(s) without a loaded video. Missing: ${missingImages.slice(0, 5).join(', ')}${missingImages.length > 5 ? '…' : ''}`);
+                return;
+            }
+            const wasPlaying = canCaptureFromVideo && !videoPlayer.paused;
+            const origTime = canCaptureFromVideo ? videoPlayer.currentTime : 0;
+            if (canCaptureFromVideo) videoPlayer.pause();
             try {
                 const zip = new JSZip();
-                zip.file(`caulerpa-survey-${new Date().toISOString().slice(0,10)}.gpx`, generateGPXWithWaypoints());
-                const canvas = document.createElement('canvas'); canvas.width = videoPlayer.videoWidth; canvas.height = videoPlayer.videoHeight; const ctx = canvas.getContext('2d');
-                for (const s of sightings) {
-                    videoPlayer.currentTime = s.videoTime; await new Promise(r=>{const h=()=>{videoPlayer.removeEventListener('seeked',h);r();}; videoPlayer.addEventListener('seeked',h,{once:true}); }); await new Promise(r=>setTimeout(r,50));
-                    ctx.drawImage(videoPlayer,0,0,canvas.width,canvas.height);
-                    zip.file(s.image, canvas.toDataURL('image/jpeg',0.9).split(',')[1], {base64:true});
+                zip.file(`caulerpa-survey-${new Date().toISOString().slice(0,10)}.gpx`, generateGPXWithWaypoints(false));
+                getOverlayTracksForExport().forEach((track, index) => {
+                    const overlayName = sanitizeFilename(track.filename, `overlay-${index + 1}`);
+                    zip.file(`overlays/${String(index + 1).padStart(2, '0')}-${overlayName}.gpx`, generateOverlayTrackGpx(track));
+                });
+                let canvas = null;
+                let ctx = null;
+                if (canCaptureFromVideo) {
+                    canvas = document.createElement('canvas');
+                    canvas.width = videoPlayer.videoWidth;
+                    canvas.height = videoPlayer.videoHeight;
+                    ctx = canvas.getContext('2d');
                 }
-                videoPlayer.currentTime = origTime;
+                const archivedImageNames = new Set();
+                for (const s of sightings) {
+                    const imageName = s.image || `sighting-${s.id}.jpg`;
+                    if (capturedBlobs[s.id]) {
+                        zip.file(imageName, capturedBlobs[s.id]);
+                        archivedImageNames.add(imageName);
+                        continue;
+                    }
+                    const loadedFile = s.image ? loadedImageFiles[s.image] : null;
+                    if (loadedFile) {
+                        zip.file(imageName, loadedFile);
+                        archivedImageNames.add(imageName);
+                        continue;
+                    }
+                    if (!canCaptureFromVideo) continue;
+                    videoPlayer.currentTime = s.videoTime;
+                    await new Promise(r=>{const h=()=>{videoPlayer.removeEventListener('seeked',h);r();}; videoPlayer.addEventListener('seeked',h,{once:true}); });
+                    await new Promise(r=>setTimeout(r,50));
+                    ctx.drawImage(videoPlayer,0,0,canvas.width,canvas.height);
+                    zip.file(imageName, canvas.toDataURL('image/jpeg',0.9).split(',')[1], {base64:true});
+                    archivedImageNames.add(imageName);
+                }
+                for (const imageName of getOverlayImageNamesForExport()) {
+                    if (!imageName || archivedImageNames.has(imageName)) continue;
+                    const overlayFile = loadedImageFiles[imageName];
+                    if (!overlayFile) continue;
+                    zip.file(imageName, overlayFile);
+                    archivedImageNames.add(imageName);
+                }
+                if (canCaptureFromVideo) videoPlayer.currentTime = origTime;
                 const zb = await zip.generateAsync({type:'blob'}); const url = URL.createObjectURL(zb);
                 const a = document.createElement('a'); a.href = url; a.download = `caulerpa-sightings-${new Date().toISOString().slice(0,10)}.zip`;
                 document.body.appendChild(a); a.click(); document.body.removeChild(a); hasUnsavedChanges = false;
                 setTimeout(()=>{URL.revokeObjectURL(url); if(wasPlaying) videoPlayer.play();},100);
-            } catch(err) { console.error(err); alert('Error: '+err.message); videoPlayer.currentTime = origTime; }
+            } catch(err) { console.error(err); alert('Error: '+err.message); if (canCaptureFromVideo) videoPlayer.currentTime = origTime; }
         });
 
         // ============================================================================
         // NO-VIDEO MODE
         // ============================================================================
+        function importImagesIntoLibrary(files) {
+            let addedCount = 0;
+            Array.from(files || []).forEach(f => {
+                if (!f || !String(f.type || '').startsWith('image/')) return;
+                const existingUrl = loadedImages[f.name];
+                if (typeof existingUrl === 'string' && existingUrl.startsWith('blob:')) URL.revokeObjectURL(existingUrl);
+                loadedImages[f.name] = URL.createObjectURL(f);
+                loadedImageFiles[f.name] = f;
+                addedCount += 1;
+            });
+            return addedCount;
+        }
         if (document.getElementById('loadImagesBtn')) {
             document.getElementById('loadImagesBtn').addEventListener('click',()=>document.getElementById('imageFiles').click());
             document.getElementById('imageFiles').addEventListener('change', e => {
                 const files = e.target.files; if (!files.length) return;
-                // [FIX 1] Clean up old blob URLs from loadedImages
-                Object.values(loadedImages).forEach(u=>{if(u.startsWith('blob:'))URL.revokeObjectURL(u);});
-                loadedImages = {};
-                Array.from(files).forEach(f=>{ if(f.type.startsWith('image/')) { loadedImages[f.name]=URL.createObjectURL(f); loadedImageFiles[f.name]=f; } });
-                document.getElementById('imagesLoadedInfo').textContent=`✓ ${files.length} image(s) loaded`;
-                document.getElementById('imagesLoadedInfo').style.display='block'; renderSightings(); updateSubmitButton();
+                const addedCount = importImagesIntoLibrary(files);
+                document.getElementById('imagesLoadedInfo').textContent=`✓ ${addedCount} image(s) loaded`;
+                document.getElementById('imagesLoadedInfo').style.display='block'; renderSightings(); renderOverlayTracks(); updateSubmitButton(); updateArchiveAvailability();
             });
         }
         if (loadImagesBtnTop) loadImagesBtnTop.addEventListener('click',()=>document.getElementById('imageFiles').click());
@@ -7129,6 +8106,43 @@ All rights reserved. No redistribution, modification, or reuse without written p
                     ],
                     custom_email: document.getElementById('inputEmailCustom')?.value?.trim() || null,
                     download_zip: document.getElementById('toggleDownloadZip')?.checked ?? false,
+                    overlays: getOverlayTracksForExport().map((track, index) => ({
+                        id: track.id,
+                        name: track.filename,
+                        notes: track.notes || '',
+                        overlay_index: index + 1,
+                        color: track.color,
+                        segments: (Array.isArray(track.segments) && track.segments.length ? track.segments : (track.points?.length ? [track.points] : []))
+                            .map(segment => (segment || []).map(point => ({
+                                lat: point.lat,
+                                lon: point.lon,
+                                timestamp: point.timestamp ?? null
+                            }))),
+                        waypoints: (track.waypoints || []).map(wp => ({
+                            id: wp.id || null,
+                            name: wp.name || '',
+                            lat: wp.lat,
+                            lon: wp.lon
+                        })),
+                        boundary_segments: (track.boundarySegments || []).map((segment, segmentIndex) => ({
+                            name: segment?.name || `Boundary ${segmentIndex + 1}`,
+                            points: (segment?.points || []).map(point => ({ lat: point.lat, lon: point.lon }))
+                        })),
+                        ruler_points: (track.rulerPoints || []).map(point => ({ lat: point.lat, lon: point.lon })),
+                        sightings: (track.sightings || []).map((s, sightingIndex) => ({
+                            id: s.id || `overlay-${track.id}-${sightingIndex + 1}`,
+                            name: s.name || `Sighting ${sightingIndex + 1}`,
+                            timestamp: s.timestamp ?? null,
+                            lat: s.lat,
+                            lon: s.lon,
+                            notes: s.notes || '',
+                            image: s.image || null,
+                            biota: s.biota || [],
+                            biotaOther: s.biotaOther || '',
+                            benthic: s.benthic || '',
+                            density: s.density || ''
+                        }))
+                    })),
                     bookmarks: sightings.map(s=>({
                         id:String(s.id),
                         name:s.name,
@@ -7143,20 +8157,37 @@ All rights reserved. No redistribution, modification, or reuse without written p
                         density: s.density || '',
                     }))
                 };
-                const images = sightings.flatMap(s=>{
-                    // prefer live capture blob
-                    if (capturedBlobs[s.id]) return [{ name: s.image || 'sighting.jpg', blob: capturedBlobs[s.id] }];
-                    // fall back to pre-loaded image file (review mode)
+                const images = [];
+                const seenImageNames = new Set();
+                sightings.forEach(s => {
+                    const imageName = s.image || 'sighting.jpg';
+                    if (seenImageNames.has(imageName)) return;
+                    if (capturedBlobs[s.id]) {
+                        images.push({ name: imageName, blob: capturedBlobs[s.id] });
+                        seenImageNames.add(imageName);
+                        return;
+                    }
                     const file = s.image ? loadedImageFiles[s.image] : null;
-                    if (file) return [{ name: s.image, blob: file }];
-                    return [];
+                    if (file) {
+                        images.push({ name: s.image, blob: file });
+                        seenImageNames.add(s.image);
+                    }
+                });
+                getOverlaySightingsForExport().forEach(s => {
+                    if (!s?.image || seenImageNames.has(s.image)) return;
+                    const file = loadedImageFiles[s.image];
+                    if (!file) return;
+                    images.push({ name: s.image, blob: file });
+                    seenImageNames.add(s.image);
                 });
                 submitStatus.textContent = 'Submitting...';
+                clearSubmitToast();
                 const result = await DTVA.submit(gpxFile, metadata, images);
                 currentJobId = result.job_id; submitStatus.textContent = `Job queued: ${currentJobId.slice(0,8)}... (ZIP on completion)`;
-                toast('Survey submitted — processing','info', 12000); startPolling(currentJobId);
+                activeSubmitToast = toast('Survey submitted — processing','info', 0, { sticky: true, top: true });
+                startPolling(currentJobId);
                 hasUnsavedChanges = false; updateSubmitButton();
-            } catch(err) { progressBar.className='progress-bar failed'; progressBar.style.width='100%'; submitStatus.textContent = `Error: ${err.message}`; toast(`Failed: ${err.message}`,'error'); btnSubmit.disabled=false; }
+            } catch(err) { clearSubmitToast(); progressBar.className='progress-bar failed'; progressBar.style.width='100%'; submitStatus.textContent = `Error: ${err.message}`; toast(`Failed: ${err.message}`,'error'); btnSubmit.disabled=false; }
         });
 
         function startPolling(jobId) {
@@ -7168,14 +8199,14 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 try {
                     const st = await DTVA.getStatus(jobId);
                     progressBar.style.width=`${st.progress}%`; submitStatus.textContent=`${st.status} — ${st.progress}%`;
-                    if (st.status==='completed') { clearInterval(pollTimer); pollTimer=null; progressBar.className='progress-bar completed'; progressBar.style.width='100%'; submitStatus.textContent='Report ready (ZIP)'; btnDownload.style.display='block'; currentJobId=jobId;
+                    if (st.status==='completed') { clearInterval(pollTimer); pollTimer=null; clearSubmitToast(); progressBar.className='progress-bar completed'; progressBar.style.width='100%'; submitStatus.textContent='Report ready (ZIP)'; btnDownload.style.display='block'; currentJobId=jobId;
                         toast('Report ready (ZIP)','success');
                         if (st.emails_sent && st.emails_sent.length) { setTimeout(()=> toast(`Email sent to ${st.emails_sent.join(', ')}`,'success', 10000), 1500); }
                         const autoDl = document.getElementById('toggleDownloadZip')?.checked;
                         if (autoDl) { btnDownload.click(); }
                         return;
                     }
-                    if (st.status==='failed') { clearInterval(pollTimer); pollTimer=null; progressBar.className='progress-bar failed'; progressBar.style.width='100%'; submitStatus.textContent=`Failed: ${st.error||'Unknown'}`; if (btnSubmit) btnSubmit.disabled=false; toast('Failed: '+(st.error||'Unknown'),'error'); return; }
+                    if (st.status==='failed') { clearInterval(pollTimer); pollTimer=null; clearSubmitToast(); progressBar.className='progress-bar failed'; progressBar.style.width='100%'; submitStatus.textContent=`Failed: ${st.error||'Unknown'}`; if (btnSubmit) btnSubmit.disabled=false; toast('Failed: '+(st.error||'Unknown'),'error'); return; }
                     polling = false;
                 } catch { submitStatus.textContent='Polling error — retrying...'; polling = false; }
             }, STATUS_POLL_INTERVAL);
@@ -7298,6 +8329,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
             clearVideo(); clearGPX();
             isSynced=false; syncBtn.textContent='Sync Files';
             sightings=[]; sightingMarkers=[]; sightingCounter=1;
+            overlayTracks=[]; overlayTrackLayerGroup=null;
             transects=[]; transectMarkers=[]; transectDraft=null;
             waypoints=[]; waypointMarkers=[]; boundaryPoints=[]; boundaryNames=[]; boundaryLine=null;
             transectGridPlan = null;
@@ -7325,12 +8357,14 @@ All rights reserved. No redistribution, modification, or reuse without written p
             loadedImages={}; loadedImageFiles={};
             capturedBlobs={}; currentJobId=null;
             if (pollTimer) { clearInterval(pollTimer); pollTimer=null; }
+            clearSubmitToast();
             surveyPanel.classList.remove('visible');
             if (btnSubmit) btnSubmit.disabled=true;
             btnDownload.style.display='none';
             progressBarContainer.classList.remove('visible'); submitStatus.textContent='';
             if (map) { map.remove(); map=null; }
             setAddButtonsVisible(false); setFullscreenButtonVisible(false);
+            renderOverlayTrackPanel();
         }
 
         function clearVideo() {
@@ -7370,7 +8404,14 @@ All rights reserved. No redistribution, modification, or reuse without written p
             toast('Video unloaded. GPX, sightings, and transects remain loaded.', 'info', 8000);
         }
 
-        function clearGPX() { gpxData=null; gpxRawXml=null; if (gpxJumpTimeInput) gpxJumpTimeInput.value=''; document.getElementById('gpxInfo').style.display='none'; gpxFileInput.value=''; if(loadImagesBtnTop) loadImagesBtnTop.style.display='none'; }
+        function clearGPX() {
+            gpxData=null; gpxRawXml=null; overlayTracks=[]; overlayTrackLayerGroup=null;
+            if (gpxJumpTimeInput) gpxJumpTimeInput.value='';
+            document.getElementById('gpxInfo').style.display='none';
+            gpxFileInput.value='';
+            if(loadImagesBtnTop) loadImagesBtnTop.style.display='none';
+            renderOverlayTrackPanel();
+        }
 
         // ============================================================================
         // IMAGE LIGHTBOX (with editable info)
