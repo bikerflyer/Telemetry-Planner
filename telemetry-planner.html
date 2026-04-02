@@ -293,6 +293,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
             cursor: nesw-resize; background: linear-gradient(225deg, var(--accent-primary) 50%, transparent 50%);
             opacity: 0.3; border-top-right-radius: 8px;
         }
+        .panel-resize-handle-tl {
+            position: absolute; top: 0; left: 0; width: 16px; height: 16px;
+            cursor: nwse-resize; background: linear-gradient(135deg, var(--accent-primary) 50%, transparent 50%);
+            opacity: 0.3; border-top-left-radius: 8px;
+        }
         .panel-drag-handle-bottom {
             padding: 0.3rem 0.75rem; display: flex; align-items: center; justify-content: center;
             gap: 0.35rem; background: var(--bg-tertiary); border-top: 1px solid var(--border);
@@ -303,6 +308,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
             position: absolute; bottom: 0; right: 0; width: 16px; height: 16px;
             cursor: nwse-resize; background: linear-gradient(315deg, var(--accent-primary) 50%, transparent 50%);
             opacity: 0.3; border-bottom-right-radius: 8px; z-index: 12;
+        }
+        .panel-resize-handle-bl {
+            position: absolute; bottom: 0; left: 0; width: 16px; height: 16px;
+            cursor: nesw-resize; background: linear-gradient(45deg, var(--accent-primary) 50%, transparent 50%);
+            opacity: 0.3; border-bottom-left-radius: 8px; z-index: 12;
         }
         /* Context menu for map right-click */
         #mapContextMenu {
@@ -755,9 +765,9 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 </div>
                 <div class="upload-section" id="gpxUpload">
                     <div class="upload-icon">📍</div>
-                    <div class="upload-text">Drop GPX or Survey ZIP</div>
-                    <div class="upload-hint">GPX track or archived survey ZIP from the viewer</div>
-                    <input type="file" id="gpxFile" accept=".gpx,.zip">
+                    <div class="upload-text">Drop GPX, SRT, or Survey ZIP</div>
+                    <div class="upload-hint">GPX/SRT track or archived survey ZIP from the viewer</div>
+                    <input type="file" id="gpxFile" accept=".gpx,.srt,.zip">
                     <div id="gpxInfo" style="display: none;"></div>
                 </div>
             </div>
@@ -830,15 +840,16 @@ All rights reserved. No redistribution, modification, or reuse without written p
                     <div class="survey-panel" id="surveyPanel">
                         <div class="panel-drag-handle" id="panelDragHandle">
                             <span class="drag-dots">⣿⣿</span>
+                            <div class="panel-resize-handle-tl" id="panelResizeHandleTL"></div>
                             <div class="panel-resize-handle" id="panelResizeHandle"></div>
                         </div>
                         <div class="panel-tabs">
-                            <button class="panel-tab active" data-tab="survey">Survey Info</button>
+                            <button class="panel-tab active" data-tab="survey">Mission Info</button>
                             <button class="panel-tab" data-tab="overlays">Overlays <span class="tab-count" id="tabOverlayCount">0</span></button>
                             <button class="panel-tab" data-tab="transects">Transects <span class="tab-count" id="tabTransectCount">0</span></button>
                             <button class="panel-tab" data-tab="sightings">Sightings <span class="tab-count" id="tabSightingCount">0</span></button>
                             <button class="panel-tab" data-tab="routes">Routes <span class="tab-count" id="tabRouteCount">0</span></button>
-                            <button class="panel-tab" data-tab="reporting">Reporting</button>
+                            <button class="panel-tab" data-tab="reporting">Export</button>
                         </div>
 
                         <div class="panel-tab-content active" id="tabSurvey" data-tab="survey">
@@ -957,6 +968,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                         <div class="panel-drag-handle-bottom" id="panelDragHandleBottom">
                             <span class="drag-dots">⣿⣿</span>
                         </div>
+                        <div class="panel-resize-handle-bl" id="panelResizeHandleBL"></div>
                         <div class="panel-resize-handle-br" id="panelResizeHandleBR"></div>
                     </div>
                 </div>
@@ -1206,7 +1218,8 @@ All rights reserved. No redistribution, modification, or reuse without written p
         <button data-action="waypoint-rename">Rename Waypoint</button>
         <button data-action="waypoint-delete">Delete Waypoint</button>
         <button data-action="gps-waypoint-delete">Delete Waypoint</button>
-        <button data-action="route-pattern-insert">Insert Routing Pattern...</button>
+        <button data-action="route-pattern-insert">Insert Route Pattern</button>
+        <button data-action="route-pattern-cursor">Route Pattern</button>
         <button data-action="gps-route-delete">Delete Route</button>
         <button data-action="gps-route-reverse">Reverse Route</button>
         <button data-action="area-rename">Rename Area</button>
@@ -1313,6 +1326,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
         let ctxRouteLegIdx = null;
         let ctxOnRouteLeg = false;
         let routePatternAnchorId = null;
+        let routePatternAnchorLatLng = null;
         let ctxBoundaryLabelIdx = null;
         let ctxBoundarySegIdx = null;
         let ctxOnRuler = false;
@@ -1338,6 +1352,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 'gps-waypoint-delete': () => !!ctxGpsWaypointId,
                 'route-waypoint-properties': () => !!ctxGpsWaypointId,
                 'route-pattern-insert': () => !!ctxGpsWaypointId,
+                'route-pattern-cursor': () => !!ctxLatLng && !ctxOnCursor && !ctxWaypointId && !ctxGpsWaypointId && !ctxOnRuler,
                 'route-leg-properties': () => (ctxOnRouteLeg && ctxRouteLegIdx != null),
                 'gps-route-delete': () => (ctxOnRouteLeg && ctxRouteLegIdx != null && hasRoute),
                 'gps-route-reverse': () => (ctxOnRouteLeg && ctxRouteLegIdx != null && hasRouteWithLeg),
@@ -2034,6 +2049,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
             if (freeParts.length > 1 && !res.biotaOther) res.biotaOther = freeParts.slice(1).join(' | ');
             return res;
         }
+        function deriveSightingNumber(name, fallback = 1) {
+            const match = String(name || '').match(/(\d+)(?!.*\d)/);
+            const derived = match ? parseInt(match[1], 10) : NaN;
+            return Number.isFinite(derived) && derived > 0 ? derived : fallback;
+        }
         function uuid() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8); return v.toString(16); }); }
         function latLngToArray(ll) { return [ll.lat, ll.lng]; }
         function coordKey(lat, lon, precision = 7) {
@@ -2135,6 +2155,15 @@ All rights reserved. No redistribution, modification, or reuse without written p
             return L.divIcon({
                 className: 'overlay-sighting-marker',
                 html: `<div style="width:12px;height:12px;border:1.5px solid #111827;border-radius:50%;background:#ffffff;color:#111827;box-shadow:0 0 8px rgba(0,0,0,0.28);font-size:6px;font-weight:700;display:flex;align-items:center;justify-content:center;">${number}</div>`,
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+            });
+        }
+        function createSurveySightingMarkerIcon(sighting) {
+            const number = Math.min(deriveSightingNumber(sighting?.name, sighting?.markerNumber || 1), 99);
+            return L.divIcon({
+                className: 'sighting-marker',
+                html: `<div style="width:12px;height:12px;border:1.5px solid #ffffff;border-radius:50%;background:#ff7f0e;color:#ffffff;box-shadow:0 0 8px rgba(255,127,14,0.7);font-size:6px;font-weight:700;display:flex;align-items:center;justify-content:center;">${number}</div>`,
                 iconSize: [12, 12],
                 iconAnchor: [6, 6]
             });
@@ -3897,9 +3926,16 @@ All rights reserved. No redistribution, modification, or reuse without written p
         }
 
         function handleGPXFile(file) {
-            if (!file.name.toLowerCase().endsWith('.gpx')) { alert('Please select a GPX file'); return; }
+            const lowerName = (file?.name || '').toLowerCase();
+            if (!lowerName.endsWith('.gpx') && !lowerName.endsWith('.srt')) {
+                alert('Please select a GPX or SRT file');
+                return;
+            }
             const reader = new FileReader();
-            reader.onload = e => { gpxRawXml = e.target.result; parseGPX(gpxRawXml);
+            reader.onload = e => {
+                const rawText = e.target.result;
+                gpxRawXml = lowerName.endsWith('.srt') ? convertSRTtoGPX(rawText) : rawText;
+                parseGPX(gpxRawXml);
                 const info = document.getElementById('gpxInfo');
                 info.textContent = '';
                 const fi = document.createElement('div'); fi.className = 'file-info';
@@ -3920,6 +3956,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 toast('Loading survey ZIP...', 'info', 3000);
                 const zip = await JSZip.loadAsync(file);
                 const gpxFiles = Object.values(zip.files).filter(f => !f.dir && f.name.toLowerCase().endsWith('.gpx'));
+                const routeJsonEntry = Object.values(zip.files).find(f => !f.dir && /(?:^|\/)route-mission\.json$/i.test(f.name));
                 const overlayGpxEntries = gpxFiles.filter(f => f.name.startsWith('overlays/'));
                 const gpxEntry = gpxFiles.find(f => !f.name.startsWith('overlays/')) || gpxFiles[0];
                 if (!gpxEntry) { alert('No GPX file found in ZIP archive.'); return; }
@@ -3967,6 +4004,17 @@ All rights reserved. No redistribution, modification, or reuse without written p
                     }
                 }
 
+                let importedRouteJson = false;
+                if (routeJsonEntry) {
+                    try {
+                        const payload = JSON.parse(await routeJsonEntry.async('text'));
+                        importedRouteJson = applyPlannerRouteJson(payload);
+                    } catch (err) {
+                        console.error(err);
+                        toast(`Could not load route mission from ${routeJsonEntry.name}: ${err.message}`, 'error', 5000);
+                    }
+                }
+
                 const info = document.getElementById('gpxInfo');
                 info.textContent = '';
                 const fi = document.createElement('div'); fi.className = 'file-info';
@@ -3984,7 +4032,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 renderOverlayTracks();
                 renderOverlayTrackPanel();
                 updateSubmitButton();
-                toast(`Survey ZIP loaded: ${sightings.length} survey sighting(s), ${overlayTracks.length} overlay(s), ${imageCount} image(s) restored.`, 'success', 6000);
+                const routeCount = Array.isArray(gpsMission?.waypoints) ? gpsMission.waypoints.length : 0;
+                const routeSuffix = routeCount >= 2
+                    ? `, ${routeCount} route waypoint(s) restored${importedRouteJson ? ' from planner route data' : ''}`
+                    : '';
+                toast(`Survey ZIP loaded: ${sightings.length} survey sighting(s), ${overlayTracks.length} overlay(s), ${imageCount} image(s) restored${routeSuffix}.`, 'success', 6000);
             } catch (err) {
                 console.error(err);
                 alert('Error loading ZIP: ' + err.message);
@@ -3994,6 +4046,40 @@ All rights reserved. No redistribution, modification, or reuse without written p
         // ============================================================================
         // GPX PARSING
         // ============================================================================
+        function convertSRTtoGPX(srtText) {
+            const blocks = (srtText || '').trim().split(/\n\s*\n/);
+            const trkpts = [];
+
+            const dtRe = /(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d+)/;
+            const latRe = /\[latitude\s*:\s*([-\d.]+)\]/i;
+            const lonRe = /\[longitude\s*:\s*([-\d.]+)\]/i;
+            const altRe = /abs_alt\s*:\s*([-\d.]+)/i;
+            const altRelRe = /rel_alt\s*:\s*([-\d.]+)/i;
+
+            blocks.forEach(block => {
+                const dtMatch = block.match(dtRe);
+                const latMatch = block.match(latRe);
+                const lonMatch = block.match(lonRe);
+                if (!dtMatch || !latMatch || !lonMatch) return;
+
+                const isoTime = dtMatch[1].replace(' ', 'T');
+                const lat = parseFloat(latMatch[1]);
+                const lon = parseFloat(lonMatch[1]);
+                const altMatch = block.match(altRe) || block.match(altRelRe);
+                const ele = altMatch ? parseFloat(altMatch[1]) : 0;
+
+                trkpts.push(`    <trkpt lat="${lat}" lon="${lon}"><ele>${ele}</ele><time>${isoTime}</time></trkpt>`);
+            });
+
+            if (!trkpts.length) throw new Error('No valid telemetry blocks found in SRT file.');
+
+            return `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="DJI SRT Import">
+  <trk><trkseg>
+${trkpts.join('\n')}
+  </trkseg></trk>
+</gpx>`;
+        }
         function parseGPX(gpxText) {
             sightingMarkers.forEach(m => { if (m && map) map.removeLayer(m); });
             sightings = []; sightingMarkers = []; sightingCounter = 1;
@@ -4093,10 +4179,10 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 let imageFilename = null;
                 if (linkEl) imageFilename = linkEl.getAttribute('href');
                 else if (notes.includes('Image:')) { const m = notes.match(/Image:\s*([^\n]+)/); if (m) { imageFilename = m[1].trim(); notes = notes.replace(/\nImage:[^\n]+/,'').trim(); } }
-                sightings.push({ id: `${Date.now()}-${i}`, name, videoTime: Math.max(0, gpxData.length ? (ts - gpxData[0].timestamp)/1000 : 0),
+                sightings.push({ id: `${Date.now()}-${i}`, name, markerNumber: deriveSightingNumber(name, i + 1), videoTime: Math.max(0, gpxData.length ? (ts - gpxData[0].timestamp)/1000 : 0),
                     timestamp: ts, lat, lon, notes, image: imageFilename, biota: parsed.biota || [], biotaOther: parsed.biotaOther || '', benthic: parsed.benthic || '', density: parsed.density || '' });
             }
-            if (wpts.length) sightingCounter = sightings.length + 1;
+            if (wpts.length) sightingCounter = sightings.reduce((max, s) => Math.max(max, Number(s.markerNumber) || 0), 0) + 1;
 
             // Parse routes — boundaries and ruler
             const rtes = doc.getElementsByTagName('rte');
@@ -4424,6 +4510,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 const btnGpsWaypointDelete = ctxMenu.querySelector('[data-action="gps-waypoint-delete"]');
                 const btnRouteWaypointProps = ctxMenu.querySelector('[data-action="route-waypoint-properties"]');
                 const btnRoutePatternInsert = ctxMenu.querySelector('[data-action="route-pattern-insert"]');
+                const btnRoutePatternCursor = ctxMenu.querySelector('[data-action="route-pattern-cursor"]');
                 const btnRouteLegProps = ctxMenu.querySelector('[data-action="route-leg-properties"]');
                 const btnGpsRouteDelete = ctxMenu.querySelector('[data-action="gps-route-delete"]');
                 const btnGpsRouteReverse = ctxMenu.querySelector('[data-action="gps-route-reverse"]');
@@ -4501,6 +4588,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
                     ctxMenu.style.display='none';
                     if (!ctxGpsWaypointId) return;
                     openRoutePatternModal(ctxGpsWaypointId);
+                });
+                if (btnRoutePatternCursor) btnRoutePatternCursor.addEventListener('click', () => {
+                    ctxMenu.style.display='none';
+                    if (!ctxLatLng) return;
+                    openRoutePatternModal(null, { lat: ctxLatLng.lat, lng: ctxLatLng.lng });
                 });
                 if (btnRouteLegProps) btnRouteLegProps.addEventListener('click', () => {
                     ctxMenu.style.display = 'none';
@@ -4906,7 +4998,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 if (!blob) blob = dataUrlToBlob(dataUrl);
                 const id = generateUUID();
                 pendingSighting = { id, name, videoTime: videoPlayer.currentTime, timestamp: point.timestamp,
-                    lat: point.lat, lon: point.lon, notes: '', image: filename,
+                    lat: point.lat, lon: point.lon, notes: '', image: filename, markerNumber: sightingCounter,
                     biota: [], biotaOther: '', benthic: '', density: '',
                     objectUrl: URL.createObjectURL(blob), blob, dataUrl };
                 videoPlayer.pause();
@@ -5017,13 +5109,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
         });
 
         function addSightingToMap(s) {
-            const icon = makeCircleDotIcon({
-                className: 'sighting-marker',
-                size: 10,
-                border: 1.5,
-                bg: '#ff7f0e',
-                shadow: 'rgba(255,127,14,0.7)'
-            });
+            const icon = createSurveySightingMarkerIcon(s);
             const m = L.marker([s.lat,s.lon],{icon}).addTo(map);
             m.bindPopup(() => {
                 const el = document.createElement('div');
@@ -5269,10 +5355,25 @@ All rights reserved. No redistribution, modification, or reuse without written p
             for (let i = lo; i < hi; i++) routeSelectedLegIdxs.add(i);
             routeSelectionAnchorWaypointId = anchorId;
         }
+        function selectWholeRoute() {
+            if (!Array.isArray(gpsMission?.waypoints) || !gpsMission.waypoints.length) {
+                clearRouteSelection();
+                return;
+            }
+            routeSelectedWaypointIds = new Set(gpsMission.waypoints.map(w => w.id));
+            routeSelectedLegIdxs = new Set();
+            for (let i = 0; i < gpsMission.waypoints.length - 1; i++) routeSelectedLegIdxs.add(i);
+            routeSelectionAnchorWaypointId = gpsMission.waypoints[0]?.id || null;
+        }
         function clearRouteSelection() {
             routeSelectedWaypointIds = new Set();
             routeSelectedLegIdxs = new Set();
             routeSelectionAnchorWaypointId = null;
+        }
+        function isWholeRouteSelected() {
+            if (!Array.isArray(gpsMission?.waypoints) || gpsMission.waypoints.length < 2) return false;
+            return routeSelectedWaypointIds.size === gpsMission.waypoints.length &&
+                routeSelectedLegIdxs.size === (gpsMission.waypoints.length - 1);
         }
         function getSelectedWaypointIdsOrdered() {
             if (!Array.isArray(gpsMission?.waypoints) || !gpsMission.waypoints.length) return [];
@@ -5533,6 +5634,8 @@ All rights reserved. No redistribution, modification, or reuse without written p
                     if (typeof onRouteDragStart !== 'function') return;
                     if (!e?.latlng) return;
                     L.DomEvent.stopPropagation(e);
+                    selectWholeRoute();
+                    renderRouteSelectionOverlay(routePoints);
                     onRouteDragStart(e.latlng);
                 });
             }
@@ -5578,10 +5681,12 @@ All rights reserved. No redistribution, modification, or reuse without written p
             ).addTo(map);
             // Thin invisible hit zone — only 5px wide so you have to be close to the line
             transectRouteHitLayer = L.polyline(latlngs,
-                { color: '#000', weight: 5, opacity: 0, interactive: true }
+                { color: '#000', weight: 12, opacity: 0, interactive: true }
             ).addTo(map);
             startWholeRouteDrag = (latlng) => {
                 if (!map || !Array.isArray(gpsMission.waypoints) || gpsMission.waypoints.length < 2 || !latlng) return;
+                selectWholeRoute();
+                renderRouteSelectionOverlay(gpsMission.waypoints);
                 gpsRouteDragActive = true;
                 gpsRouteDragStartLatLng = latlng;
                 gpsRouteDragSnapshot = gpsMission.waypoints.map(p => ({ ...p }));
@@ -5598,6 +5703,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 L.DomEvent.preventDefault(e);
                 L.DomEvent.stopPropagation(e);
                 if (routeDrawing) { stopRouteDrawing(); return; }
+                selectWholeRoute();
                 gpsRouteDragActive = false;
                 gpsRouteDragStartLatLng = null;
                 gpsRouteDragSnapshot = null;
@@ -6436,13 +6542,124 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 role: 'mission'
             }));
         }
+        function createPatternOrientedSegments(anchorWp, opts) {
+            const pattern = (opts?.pattern || 'lawnmower').toLowerCase();
+            const legSpacingM = Math.max(1, Number(opts?.legSpacingM) || Number(opts?.spacingM) || 5);
+            const widthM = Math.max(4, Number(opts?.widthM) || 100);
+            const heightM = Math.max(4, Number(opts?.heightM) || 80);
+            const heading = normalizeBearingDeg(opts?.headingDeg);
+            const segments = [];
+            if (pattern !== 'lawnmower' && pattern !== 'grid') return segments;
+            const passes = Math.max(2, Math.floor(widthM / legSpacingM) + 1);
+            for (let p = 0; p < passes; p++) {
+                const x = (p / (passes - 1)) * widthM;
+                const a = metersOffsetFromAnchor(anchorWp, x, 0, heading);
+                const b = metersOffsetFromAnchor(anchorWp, x, -heightM, heading);
+                const fromBase = p % 2 === 0 ? a : b;
+                const toBase = p % 2 === 0 ? b : a;
+                segments.push({
+                    from: {
+                        id: uuid(),
+                        lat: fromBase.lat,
+                        lon: fromBase.lon,
+                        name: `${pattern}-${(p * 2) + 1}`,
+                        source: 'pattern',
+                        role: p === 0 ? 'start' : 'mission'
+                    },
+                    to: {
+                        id: uuid(),
+                        lat: toBase.lat,
+                        lon: toBase.lon,
+                        name: `${pattern}-${(p * 2) + 2}`,
+                        source: 'pattern',
+                        role: 'mission'
+                    }
+                });
+            }
+            if (segments.length) segments[segments.length - 1].to.role = 'finish';
+            return segments;
+        }
+        function clipPatternSegmentsToAllowedArea(orientedSegments, containPolygon = null, avoidPolygons = []) {
+            if (!window.turf || !Array.isArray(orientedSegments) || !orientedSegments.length) return orientedSegments || [];
+            const segments = [];
+            const allLines = [];
+            if (containPolygon) {
+                try { allLines.push(turf.polygonToLine(containPolygon)); } catch {}
+            }
+            (avoidPolygons || []).forEach(poly => {
+                try { allLines.push(turf.polygonToLine(poly)); } catch {}
+            });
+            const validMidpoint = (coord) => {
+                const pt = turf.point(coord);
+                if (containPolygon && !turf.booleanPointInPolygon(pt, containPolygon, { ignoreBoundary: false })) return false;
+                if ((avoidPolygons || []).some(poly => turf.booleanPointInPolygon(pt, poly, { ignoreBoundary: true }))) return false;
+                return true;
+            };
+            orientedSegments.forEach(seg => {
+                const from = seg?.from;
+                const to = seg?.to;
+                if (!from || !to) return;
+                const start = [from.lon, from.lat];
+                const end = [to.lon, to.lat];
+                const hits = uniqueIntersectionPoints(allLines.flatMap(line =>
+                    turf.lineIntersect(turf.lineString([start, end]), line)?.features || []
+                ));
+                const pts = [start, ...hits, end].sort((a, b) =>
+                    turf.distance(start, a, { units: 'kilometers' }) - turf.distance(start, b, { units: 'kilometers' })
+                );
+                const fragments = [];
+                for (let i = 0; i < pts.length - 1; i++) {
+                    const a = pts[i];
+                    const b = pts[i + 1];
+                    const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+                    if (!validMidpoint(mid)) continue;
+                    fragments.push({
+                        from: { ...from, lat: a[1], lon: a[0] },
+                        to: { ...to, lat: b[1], lon: b[0] }
+                    });
+                }
+                if (!fragments.length) return;
+                segments.push({
+                    from: { ...from, lat: fragments[0].from.lat, lon: fragments[0].from.lon },
+                    to: { ...to, lat: fragments[fragments.length - 1].to.lat, lon: fragments[fragments.length - 1].to.lon },
+                    fragments
+                });
+            });
+            return segments;
+        }
+        function normalizePatternRoutePoints(routePoints, patternName = 'pattern') {
+            return (routePoints || []).map((p, idx, arr) => ({
+                id: p.id || uuid(),
+                lat: p.lat,
+                lon: p.lon,
+                name: p.name || `${patternName}-${idx + 1}`,
+                source: p.source || patternName,
+                role: p.role || (idx === 0 ? 'start' : (idx === arr.length - 1 ? 'finish' : 'mission'))
+            }));
+        }
+        function buildBoundaryAwarePatternRoute(anchorWp, opts) {
+            const pattern = (opts?.pattern || '').toLowerCase();
+            if (pattern !== 'lawnmower' && pattern !== 'grid') return null;
+            const allBoundaries = getBoundaryPolygons();
+            const containment = getRouteContainmentBoundary([{ lat: anchorWp.lat, lon: anchorWp.lon }]);
+            const containPolygon = containment?.polygon || null;
+            const avoidPolygons = allBoundaries
+                .filter(b => !containment || b.segmentIndex !== containment.segmentIndex)
+                .map(b => b.polygon);
+            const orientedSegments = createPatternOrientedSegments(anchorWp, opts);
+            const clippedSegments = clipPatternSegmentsToAllowedArea(orientedSegments, containPolygon, avoidPolygons);
+            if (!clippedSegments.length) return [];
+            const route = buildAxisAlignedGridRoute(clippedSegments, normalizeBearingDeg(opts?.headingDeg), containPolygon, avoidPolygons);
+            return normalizePatternRoutePoints(route, pattern || 'pattern');
+        }
         function applyRoutePatternAtAnchor(anchorId, opts) {
             const anchorWp = findGpsWaypointById(anchorId);
             if (!anchorWp) return;
             const startIdx = gpsMission.waypoints.findIndex(w => w.id === anchorWp.id);
             if (startIdx < 0) return;
             const postAnchorWp = gpsMission.waypoints[startIdx + 1] || null;
-            const pts = createPatternPoints(anchorWp, opts);
+            const preferredRoute = buildBoundaryAwarePatternRoute(anchorWp, opts);
+            const pts = preferredRoute?.length ? preferredRoute.slice(1) : createPatternPoints(anchorWp, opts);
             if (!pts.length) {
                 toast('No pattern points generated. Check values.', 'warning');
                 return;
@@ -6457,15 +6674,13 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 headingDeg: opts?.headingDeg,
                 laneSpacingM: Number.isFinite(Number(opts?.legSpacingM)) ? Number(opts.legSpacingM) : Number(opts?.spacingM)
             };
-            const reroute = autoRouteAroundBoundaryAreas(candidate, routeOpts);
+            const reroute = preferredRoute?.length ? { route: candidate, changed: true } : autoRouteAroundBoundaryAreas(candidate, routeOpts);
             let routedCandidate = reroute.route;
-            if (routeViolatesRouteConstraint(routedCandidate)) {
-                // Fallback 1: disable orthogonal preference and use shortest free-form detours.
+            if (!preferredRoute?.length && routeViolatesRouteConstraint(routedCandidate)) {
                 const rrFreeform = autoRouteAroundBoundaryAreas(candidate, { ...routeOpts, pattern: '' });
                 routedCandidate = rrFreeform.route;
             }
-            if (routeViolatesRouteConstraint(routedCandidate)) {
-                // Fallback 2: infer heading/lane from candidate geometry and retry.
+            if (!preferredRoute?.length && routeViolatesRouteConstraint(routedCandidate)) {
                 const rrInferred = autoRouteAroundBoundaryAreas(candidate, inferRouteAvoidanceOptions(candidate));
                 routedCandidate = rrInferred.route;
             }
@@ -6492,11 +6707,86 @@ All rights reserved. No redistribution, modification, or reuse without written p
             renderTransectGridPlan();
             renderGpsMissionWaypoints();
             setGridPlannerStatus(`${opts.pattern} route inserted from selected Route Waypoint (${selectedMode}).`);
-            if (reroute.changed) toast('Pattern auto-routed around boundary obstacle.', 'info', 2600);
+            if (preferredRoute?.length) toast('Pattern clipped to boundary and stitched along boundary legs.', 'info', 2600);
+            else if (reroute.changed) toast('Pattern auto-routed around boundary obstacle.', 'info', 2600);
             markUnsaved();
         }
-        function openRoutePatternModal(anchorId) {
+        function applyRoutePatternAtCursor(anchorLatLng, opts) {
+            if (!anchorLatLng || !Number.isFinite(anchorLatLng.lat) || !Number.isFinite(anchorLatLng.lng)) return;
+            const anchorWp = {
+                id: uuid(),
+                lat: anchorLatLng.lat,
+                lon: anchorLatLng.lng,
+                name: `Route WP ${Math.max(1, (gpsMission?.waypoints?.length || 0) + 1)}`,
+                source: 'pattern',
+                role: 'mission'
+            };
+            const preferredRoute = buildBoundaryAwarePatternRoute(anchorWp, opts);
+            const pts = preferredRoute?.length ? preferredRoute : createPatternPoints(anchorWp, opts);
+            if (!pts.length) {
+                toast('No pattern points generated. Check values.', 'warning');
+                return;
+            }
+            const base = Array.isArray(gpsMission?.waypoints) ? gpsMission.waypoints.map(p => ({ ...p })) : [];
+            let insertPos = base.length;
+            if (base.length >= 2) {
+                const nearestLegIdx = findNearestGpsLegIndex({ lat: anchorLatLng.lat, lng: anchorLatLng.lng });
+                insertPos = Number.isInteger(nearestLegIdx) && nearestLegIdx >= 0 ? nearestLegIdx + 1 : base.length;
+            }
+            const insertedPoints = preferredRoute?.length ? pts : [anchorWp, ...pts];
+            const candidate = [
+                ...base.slice(0, insertPos),
+                ...insertedPoints,
+                ...base.slice(insertPos)
+            ];
+            const routeOpts = {
+                pattern: opts?.pattern,
+                headingDeg: opts?.headingDeg,
+                laneSpacingM: Number.isFinite(Number(opts?.legSpacingM)) ? Number(opts.legSpacingM) : Number(opts?.spacingM)
+            };
+            const reroute = preferredRoute?.length ? { route: candidate, changed: true } : autoRouteAroundBoundaryAreas(candidate, routeOpts);
+            let routedCandidate = reroute.route;
+            if (!preferredRoute?.length && routeViolatesRouteConstraint(routedCandidate)) {
+                const rrFreeform = autoRouteAroundBoundaryAreas(candidate, { ...routeOpts, pattern: '' });
+                routedCandidate = rrFreeform.route;
+            }
+            if (!preferredRoute?.length && routeViolatesRouteConstraint(routedCandidate)) {
+                const rrInferred = autoRouteAroundBoundaryAreas(candidate, inferRouteAvoidanceOptions(candidate));
+                routedCandidate = rrInferred.route;
+            }
+            if (routeViolatesRouteConstraint(routedCandidate)) {
+                toast('Pattern rejected: result crosses/enters boundry area.', 'error', 3500);
+                return;
+            }
+            pushRouteUndoSnapshot();
+            gpsMission.waypoints = routedCandidate;
+            const selectedMode = opts?.movementMode || ROUTE_PROPERTY_DEFAULTS.movement_mode;
+            const anchorPos = preferredRoute?.length ? insertPos : gpsMission.waypoints.findIndex(w => w.id === anchorWp.id);
+            const stopPos = preferredRoute?.length
+                ? (insertPos + insertedPoints.length)
+                : (base.length ? Math.max(anchorPos + 1, gpsMission.waypoints.length - base.length) : gpsMission.waypoints.length);
+            if (anchorPos >= 0) {
+                for (let i = anchorPos; i < Math.min(stopPos, gpsMission.waypoints.length - 1); i++) {
+                    const a = gpsMission.waypoints[i];
+                    const b = gpsMission.waypoints[i + 1];
+                    if (!a || !b) continue;
+                    const key = `${a.id}->${b.id}`;
+                    routeLegProperties[key] = { ...(routeLegProperties[key] || {}), movement_mode: selectedMode };
+                }
+            }
+            recalcGridRouteMetrics();
+            renderTransectGridPlan();
+            renderGpsMissionWaypoints();
+            selectWholeRoute();
+            renderGpsMissionRouteLine();
+            setGridPlannerStatus(`${opts.pattern} route created from clicked map position (${selectedMode}).`);
+            if (preferredRoute?.length) toast('Pattern clipped to boundary and stitched along boundary legs.', 'info', 2600);
+            else if (reroute.changed) toast('Pattern auto-routed around boundary obstacle.', 'info', 2600);
+            markUnsaved();
+        }
+        function openRoutePatternModal(anchorId, anchorLatLng = null) {
             routePatternAnchorId = anchorId;
+            routePatternAnchorLatLng = anchorLatLng ? { lat: anchorLatLng.lat, lng: anchorLatLng.lng } : null;
             if (routePatternLegSpacingM) routePatternLegSpacingM.value = String(sanitizeGridSpacingM(inputGridSpacingM?.value));
             if (routePatternRadiusM) routePatternRadiusM.value = String(Math.max(2, sanitizeGridLengthM(inputGridLengthM?.value) / 2));
             if (routePatternHeadingDeg) routePatternHeadingDeg.value = String(normalizeBearingDeg(inputGridBearingDeg?.value).toFixed(1));
@@ -6513,10 +6803,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
         }
         function closeRoutePatternModal() {
             routePatternAnchorId = null;
+            routePatternAnchorLatLng = null;
             if (routePatternModal) routePatternModal.classList.remove('active');
         }
         function applyRoutePatternFromModal() {
-            if (!routePatternAnchorId) return;
+            if (!routePatternAnchorId && !routePatternAnchorLatLng) return;
             const opts = {
                 pattern: routePatternType?.value || 'lawnmower',
                 radiusM: Number(routePatternRadiusM?.value || 40),
@@ -6528,7 +6819,8 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 turns: Number(routePatternTurns?.value || 4),
                 movementMode: routePatternMovementMode?.value || ROUTE_PROPERTY_DEFAULTS.movement_mode
             };
-            applyRoutePatternAtAnchor(routePatternAnchorId, opts);
+            if (routePatternAnchorId) applyRoutePatternAtAnchor(routePatternAnchorId, opts);
+            else applyRoutePatternAtCursor(routePatternAnchorLatLng, opts);
             closeRoutePatternModal();
         }
         function updateRoutePatternForm() {
@@ -6544,7 +6836,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
             if (routePatternWidthM) routePatternWidthM.closest('.survey-field').style.display = showRect ? '' : 'none';
             if (routePatternHeightM) routePatternHeightM.closest('.survey-field').style.display = showRect ? '' : 'none';
             if (routePatternHeadingDeg) routePatternHeadingDeg.closest('.survey-field').style.display = showHeading ? '' : 'none';
-            if (routePatternHint) routePatternHint.textContent = `Pattern: ${pattern}. Route will be inserted after selected Route Waypoint.`;
+            if (routePatternHint) {
+                routePatternHint.textContent = routePatternAnchorLatLng
+                    ? `Pattern: ${pattern}. Route will start from the clicked map position.`
+                    : `Pattern: ${pattern}. Route will be inserted after selected Route Waypoint.`;
+            }
         }
 
         function clearTransectGridLayers() {
@@ -6669,6 +6965,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 for (let i = 1; i < current.length - 1; i++) {
                     const mid = current[i];
                     if (!mid || String(mid.source || '').toLowerCase() !== 'avoid') continue;
+                    if (mid.keepDetour === true) continue;
                     const trial = [...current.slice(0, i), ...current.slice(i + 1)];
                     if (!routeViolatesRouteConstraint(trial)) {
                         current = trial;
@@ -6889,18 +7186,22 @@ All rights reserved. No redistribution, modification, or reuse without written p
                     detourPts.push(p);
                 }
                 if (!detourPts.length) return null;
-                const chain = reduceChainByVisibility([a, ...detourPts, b]);
+                // Keep a short boundary-following run instead of collapsing the arc to the
+                // smallest visible shortcut. This adds explicit route points so the detour
+                // stays visually parallel to the boundary before rejoining the next leg.
+                const chain = [a, ...detourPts, b];
                 for (let i = 1; i < chain.length; i++) {
                     if (!isValidLeg(chain[i - 1], chain[i])) return null;
                 }
-                const reducedDetour = chain.slice(1, -1);
-                if (!reducedDetour.length) return null;
-                return reducedDetour.map((p, i) => ({
+                const preservedDetour = chain.slice(1, -1);
+                if (!preservedDetour.length) return null;
+                return preservedDetour.map((p, i) => ({
                     id: uuid(),
                     lat: p.lat,
                     lon: p.lon,
                     name: `Avoid ${i + 1}`,
                     source: 'avoid',
+                    keepDetour: true,
                     role: 'mission'
                 }));
             };
@@ -7019,6 +7320,29 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 role: 'mission'
             }];
         }
+        function routeAroundPolygonSegmentOrthogonal(a, b, polygon, headingDeg = 0) {
+            // Prefer the existing boundary-edge router so connectors hug the actual boundary,
+            // then fall back to an axis-aligned corner if no arc-chain can be built.
+            const arcDetour = routeAroundPolygonSegment(a, b, polygon);
+            if (Array.isArray(arcDetour) && arcDetour.length) return arcDetour;
+            if (!window.turf || !a || !b || !polygon) return [];
+            const transform = makeHeadingLocalTransform((a.lat + b.lat) / 2, (a.lon + b.lon) / 2, headingDeg);
+            const aLocal = transform.toLocal(a);
+            const bLocal = transform.toLocal(b);
+            const corner1 = transform.fromLocal({ along: aLocal.along, perp: bLocal.perp });
+            const corner2 = transform.fromLocal({ along: bLocal.along, perp: aLocal.perp });
+            const candidates = [corner1, corner2]
+                .filter(c => !segmentViolatesBoundary(a, c, polygon) && !segmentViolatesBoundary(c, b, polygon))
+                .map((c, idx) => ({
+                    id: uuid(),
+                    lat: c.lat,
+                    lon: c.lon,
+                    name: `Avoid ${idx + 1}`,
+                    source: 'avoid',
+                    role: 'mission'
+                }));
+            return candidates.length ? [candidates[0]] : [];
+        }
         // Walk routePoints and insert boundary-hugging detours wherever a leg crosses a boundary area.
         // Transit detours follow actual boundary edges (legs parallel to boundary segments),
         // staying within ~0.5 m of the boundary edge.
@@ -7128,8 +7452,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
 
             const points = [];
             orientedSegments.forEach(seg => {
-                if (seg?.from) points.push(seg.from);
-                if (seg?.to) points.push(seg.to);
+                const fragments = Array.isArray(seg?.fragments) && seg.fragments.length ? seg.fragments : [seg];
+                fragments.forEach(fragment => {
+                    if (fragment?.from) points.push(fragment.from);
+                    if (fragment?.to) points.push(fragment.to);
+                });
             });
             if (!points.length) return [];
 
@@ -7167,6 +7494,23 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 const dM = getDistanceFromLatLonInKm(prev.lat, prev.lon, pt.lat, pt.lon) * 1000;
                 if (dM > epsM) route.push({ ...pt });
             };
+            const interpolatePoint = (p1, p2, t) => ({
+                lat: p1.lat + ((p2.lat - p1.lat) * t),
+                lon: p1.lon + ((p2.lon - p1.lon) * t)
+            });
+            const trimLegToValidExtent = (fromPt, toPt) => {
+                if (!fromPt || !toPt) return null;
+                if (legValid(fromPt, toPt)) return { ...toPt };
+                let best = null;
+                const steps = 64;
+                for (let i = 1; i <= steps; i++) {
+                    const t = i / steps;
+                    const candidate = interpolatePoint(fromPt, toPt, t);
+                    if (legValid(fromPt, candidate)) best = candidate;
+                    else break;
+                }
+                return best;
+            };
 
             const connectorCorners = (fromPt, toPt) => {
                 const fromL = transform.toLocal(fromPt);
@@ -7185,11 +7529,20 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 );
                 return [candidates[0]];
             };
-            const connectLeg = (fromPt, toPt) => {
+            const connectTransit = (fromPt, toPt) => {
                 if (!fromPt || !toPt) return false;
                 if (legValid(fromPt, toPt)) {
                     pushIfFar(toPt);
                     return true;
+                }
+                const corners = connectorCorners(fromPt, toPt);
+                if (corners.length) {
+                    corners.forEach(c => pushIfFar(c));
+                    const last = route[route.length - 1];
+                    if (last && legValid(last, toPt)) {
+                        pushIfFar(toPt);
+                        return true;
+                    }
                 }
                 const blocker = blockingAvoidPolygon(fromPt, toPt);
                 if (blocker) {
@@ -7203,47 +7556,57 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 }
                 return false;
             };
+            const appendPatternLeg = (fromPt, toPt) => {
+                if (!fromPt || !toPt) return false;
+                // Preserve the planned survey leg heading. Only the inter-leg transit
+                // connector should bend around obstacles; the rung itself should stay
+                // on its original line and simply trim back to the nearest valid extent.
+                pushIfFar(fromPt);
+                const trimmedEnd = trimLegToValidExtent(fromPt, toPt);
+                if (!trimmedEnd) return false;
+                pushIfFar(trimmedEnd);
+                return true;
+            };
 
             orientedSegments.forEach((seg, idx) => {
-                const from = seg.from;
-                const to = seg.to;
-                if (!from || !to) return;
+                const fragments = Array.isArray(seg?.fragments) && seg.fragments.length ? seg.fragments : [seg];
+                const firstFragment = fragments[0];
+                const lastFragment = fragments[fragments.length - 1];
+                if (!firstFragment?.from || !lastFragment?.to) return;
                 if (idx === 0) {
-                    pushIfFar(from);
-                    connectLeg(from, to);
-                    return;
+                    pushIfFar(firstFragment.from);
                 }
-                const prev = route[route.length - 1];
-                if (!prev) {
-                    pushIfFar(from);
-                    connectLeg(from, to);
-                    return;
+                let entryPoint = route[route.length - 1];
+                if (!entryPoint) {
+                    pushIfFar(firstFragment.from);
+                    entryPoint = route[route.length - 1];
                 }
-                const gapM = getDistanceFromLatLonInKm(prev.lat, prev.lon, from.lat, from.lon) * 1000;
-                if (gapM > 0.5) {
-                    const corners = connectorCorners(prev, from);
-                    if (corners.length) {
-                        corners.forEach(c => pushIfFar(c));
-                        const last = route[route.length - 1];
-                        if (last && legValid(last, from)) pushIfFar(from);
-                    } else {
-                        const blocker = blockingAvoidPolygon(prev, from);
-                        if (blocker) {
-                            const detour = routeAroundPolygonSegmentOrthogonal(prev, from, blocker, headingDeg) || [];
-                            detour.forEach(p => pushIfFar({ lat: p.lat, lon: p.lon }));
-                            const last = route[route.length - 1];
-                            if (last && legValid(last, from)) pushIfFar(from);
-                        } else if (legValid(prev, from)) {
-                            pushIfFar(from);
-                        } else {
-                            // Drop this pass instead of creating a long crossing leg.
-                            return;
-                        }
+                const firstGapM = getDistanceFromLatLonInKm(entryPoint.lat, entryPoint.lon, firstFragment.from.lat, firstFragment.from.lon) * 1000;
+                if (firstGapM > 0.5) {
+                    if (!connectTransit(entryPoint, firstFragment.from)) {
+                        return;
+                    }
+                } else {
+                    pushIfFar(firstFragment.from);
+                }
+                for (let fragIdx = 0; fragIdx < fragments.length; fragIdx++) {
+                    const fragment = fragments[fragIdx];
+                    if (!fragment?.from || !fragment?.to) continue;
+                    if (!appendPatternLeg(fragment.from, fragment.to)) return;
+                    const nextFragment = fragments[fragIdx + 1];
+                    if (!nextFragment?.from) continue;
+                    const internalGapM = getDistanceFromLatLonInKm(fragment.to.lat, fragment.to.lon, nextFragment.from.lat, nextFragment.from.lon) * 1000;
+                    if (internalGapM <= 0.5) {
+                        pushIfFar(nextFragment.from);
+                        continue;
+                    }
+                    if (!connectTransit(fragment.to, nextFragment.from)) {
+                        return;
                     }
                 }
-                const legStart = route[route.length - 1];
-                if (!legStart) return;
-                connectLeg(legStart, to);
+                if (idx === orientedSegments.length - 1) {
+                    return;
+                }
             });
 
             return route;
@@ -7516,6 +7879,56 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 route_leg_properties: buildRouteLegPropertiesPayload(route)
             };
         }
+        function applyPlannerRouteJson(payload) {
+            if (!payload || payload.schema !== 'dropcam.telemetry.planner.route.v1') return false;
+            const survey = payload.survey || {};
+            const setValue = (id, value) => {
+                const el = document.getElementById(id);
+                if (el && value != null) el.value = String(value);
+            };
+            setValue('inputAgency', survey.agency || '');
+            setValue('inputSurveyName', survey.survey_name || '');
+            setValue('inputMethod', survey.method || '');
+            setValue('inputSiteCode', survey.site_code || '');
+            setValue('inputDate', survey.date || '');
+            setValue('inputOperator', survey.operator || '');
+
+            const routePayload = Array.isArray(payload.waypoints) ? payload.waypoints : [];
+            if (routePayload.length >= 2) {
+                gpsMission.waypoints = routePayload.map((wp, idx) => ({
+                    id: wp?.id || uuid(),
+                    lat: Number(wp?.lat),
+                    lon: Number(wp?.lon),
+                    name: wp?.name || `Route WP ${idx + 1}`,
+                    source: wp?.source || 'manual',
+                    role: wp?.role || (idx === 0 ? 'start' : (idx === routePayload.length - 1 ? 'finish' : 'mission')),
+                    nav: (wp?.nav && typeof wp.nav === 'object') ? { ...wp.nav } : undefined
+                })).filter(wp => Number.isFinite(wp.lat) && Number.isFinite(wp.lon));
+            }
+
+            routeLegProperties = {};
+            const legPayloads = Array.isArray(payload.route_leg_properties) ? payload.route_leg_properties : [];
+            legPayloads.forEach(lp => {
+                const fromSeq = Number(lp?.from_seq);
+                const toSeq = Number(lp?.to_seq);
+                if (!Number.isFinite(fromSeq) || !Number.isFinite(toSeq)) return;
+                const from = gpsMission.waypoints[fromSeq - 1];
+                const to = gpsMission.waypoints[toSeq - 1];
+                if (!from || !to) return;
+                const key = `${from.id}->${to.id}`;
+                const props = { ...lp };
+                delete props.from_seq;
+                delete props.to_seq;
+                routeLegProperties[key] = props;
+            });
+
+            clearRouteSelection();
+            recalcGridRouteMetrics();
+            renderTransectGridPlan();
+            renderGpsMissionWaypoints();
+            updateGpsMissionInfo();
+            return true;
+        }
 
         function renderTransects() {
             if (!transectListEl) return;
@@ -7675,12 +8088,24 @@ All rights reserved. No redistribution, modification, or reuse without written p
         if (routePropertiesModal) routePropertiesModal.addEventListener('click', (e) => { if (e.target === routePropertiesModal) closeRoutePropertiesModal(); });
         document.addEventListener('keydown', (e) => {
             const targetTag = (e.target?.tagName || '').toUpperCase();
+            const isEditableTarget = targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT' || e.target?.isContentEditable;
             if (e.key === 'Escape' && routePatternModal?.classList.contains('active')) closeRoutePatternModal();
             if (e.key === 'Escape' && routePropertiesModal?.classList.contains('active')) closeRoutePropertiesModal();
             if (e.key === 'Escape' && sightingModal?.classList.contains('active')) {
                 if (pendingSighting?.objectUrl) URL.revokeObjectURL(pendingSighting.objectUrl);
                 pendingSighting = null;
                 sightingModal.classList.remove('active');
+            }
+            if ((e.key === 'Delete' || e.key === 'Backspace') &&
+                !e.ctrlKey && !e.metaKey && !e.altKey &&
+                !isEditableTarget &&
+                !routePatternModal?.classList.contains('active') &&
+                !routePropertiesModal?.classList.contains('active') &&
+                !sightingModal?.classList.contains('active') &&
+                isWholeRouteSelected()) {
+                e.preventDefault();
+                clearGpsMissionRoute('Route deleted.', { clearPlan: true });
+                return;
             }
             if (e.key !== 'Enter' || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || e.isComposing) return;
             if (targetTag === 'TEXTAREA') return;
@@ -7830,25 +8255,6 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 rulerMarkers.forEach(m => { const ll = m.getLatLng(); xml += `\n    <rtept lat="${ll.lat}" lon="${ll.lng}"></rtept>`; });
                 xml += `\n  </rte>`;
             }
-            // Route mission (round-trip planning data)
-            if (Array.isArray(gpsMission?.waypoints) && gpsMission.waypoints.length >= 2) {
-                const legProps = buildRouteLegPropertiesPayload(gpsMission.waypoints);
-                const routeDesc = `ROVRouteLegProps:${JSON.stringify(legProps)}`;
-                xml += `\n  <rte><name>Route Mission</name><desc>${escapeXml(routeDesc)}</desc>`;
-                gpsMission.waypoints.forEach((p, i) => {
-                    const wpPayload = {
-                        id: p.id || uuid(),
-                        name: p.name || `Route WP ${i + 1}`,
-                        source: p.source || 'manual',
-                        role: p.role || (i === 0 ? 'start' : (i === gpsMission.waypoints.length - 1 ? 'finish' : 'mission')),
-                        waypointId: p.waypointId || null,
-                        nav: navWithEffectiveArrivalAction(p, i, gpsMission.waypoints.length)
-                    };
-                    const wpDesc = `ROVRouteWP:${JSON.stringify(wpPayload)}`;
-                    xml += `\n    <rtept lat="${p.lat}" lon="${p.lon}"><name>${escapeXml(wpPayload.name)}</name><desc>${escapeXml(wpDesc)}</desc></rtept>`;
-                });
-                xml += `\n  </rte>`;
-            }
             xml += `\n  <trk><name>Survey Track</name><trkseg>`;
             gpxData.forEach(p => { xml += `\n      <trkpt lat="${p.lat}" lon="${p.lon}"><time>${new Date(p.timestamp).toISOString()}</time></trkpt>`; });
             xml += `\n    </trkseg></trk>`;
@@ -7897,6 +8303,9 @@ All rights reserved. No redistribution, modification, or reuse without written p
             try {
                 const zip = new JSZip();
                 zip.file(`caulerpa-survey-${new Date().toISOString().slice(0,10)}.gpx`, generateGPXWithWaypoints(false));
+                if (Array.isArray(gpsMission?.waypoints) && gpsMission.waypoints.length >= 2) {
+                    zip.file('route-mission.json', JSON.stringify(buildPlannerRouteJson(), null, 2));
+                }
                 getOverlayTracksForExport().forEach((track, index) => {
                     const overlayName = sanitizeFilename(track.filename, `overlay-${index + 1}`);
                     zip.file(`overlays/${String(index + 1).padStart(2, '0')}-${overlayName}.gpx`, generateOverlayTrackGpx(track));
@@ -8296,22 +8705,37 @@ All rights reserved. No redistribution, modification, or reuse without written p
         // ============================================================================
         (function() {
             const panel = surveyPanel; const handle = document.getElementById('panelDragHandle'); const handleBottom = document.getElementById('panelDragHandleBottom');
-            const resizeHandleTR = document.getElementById('panelResizeHandle'); const resizeHandleBR = document.getElementById('panelResizeHandleBR');
+            const resizeHandleTL = document.getElementById('panelResizeHandleTL');
+            const resizeHandleTR = document.getElementById('panelResizeHandle');
+            const resizeHandleBL = document.getElementById('panelResizeHandleBL');
+            const resizeHandleBR = document.getElementById('panelResizeHandleBR');
             let isDragging = false, isResizing = false, resizeDir = '';
-            let dragOffX, dragOffY, startW, startH, startX, startY, startPanelTop;
+            let dragOffX, dragOffY, startW, startH, startX, startY, startPanelTop, startPanelLeft;
             function parentOffset() { const pr = panel.offsetParent ? panel.offsetParent.getBoundingClientRect() : { left: 0, top: 0 }; return pr; }
             function ensureTopPositioned() { const pr = parentOffset(); const rect = panel.getBoundingClientRect(); panel.style.top = (rect.top - pr.top) + 'px'; panel.style.left = (rect.left - pr.left) + 'px'; panel.style.bottom = 'auto'; panel.style.right = 'auto'; }
             function startPanelDrag(e) { ensureTopPositioned(); isDragging = true; const rect = panel.getBoundingClientRect(); dragOffX = e.clientX - rect.left; dragOffY = e.clientY - rect.top; e.preventDefault(); }
-            handle.addEventListener('mousedown', e => { if (e.target === resizeHandleTR) return; startPanelDrag(e); });
+            handle.addEventListener('mousedown', e => { if (e.target === resizeHandleTL || e.target === resizeHandleTR) return; startPanelDrag(e); });
             if (handleBottom) handleBottom.addEventListener('mousedown', startPanelDrag);
-            function startResize(dir, e) { ensureTopPositioned(); isResizing = true; resizeDir = dir; const rect = panel.getBoundingClientRect(); startW = rect.width; startH = rect.height; startX = e.clientX; startY = e.clientY; startPanelTop = parseFloat(panel.style.top); e.preventDefault(); e.stopPropagation(); }
+            function startResize(dir, e) { ensureTopPositioned(); isResizing = true; resizeDir = dir; const rect = panel.getBoundingClientRect(); startW = rect.width; startH = rect.height; startX = e.clientX; startY = e.clientY; startPanelTop = parseFloat(panel.style.top); startPanelLeft = parseFloat(panel.style.left); e.preventDefault(); e.stopPropagation(); }
+            if (resizeHandleTL) resizeHandleTL.addEventListener('mousedown', e => startResize('tl', e));
             resizeHandleTR.addEventListener('mousedown', e => startResize('tr', e));
+            if (resizeHandleBL) resizeHandleBL.addEventListener('mousedown', e => startResize('bl', e));
             resizeHandleBR.addEventListener('mousedown', e => startResize('br', e));
             document.addEventListener('mousemove', e => {
                 if (isDragging) { const pr = parentOffset(); panel.style.left = (e.clientX - dragOffX - pr.left) + 'px'; panel.style.top = (e.clientY - dragOffY - pr.top) + 'px'; }
-                if (isResizing) { const newW = Math.max(280, startW + (e.clientX - startX)); panel.style.width = newW + 'px';
-                    if (resizeDir === 'tr') { const newH = Math.max(200, startH + (startY - e.clientY)); panel.style.height = newH + 'px'; panel.style.top = (startPanelTop - (newH - startH)) + 'px'; }
-                    else { const newH = Math.max(200, startH + (e.clientY - startY)); panel.style.height = newH + 'px'; }
+                if (isResizing) {
+                    const minW = 280;
+                    const minH = 200;
+                    const leftResize = resizeDir === 'tl' || resizeDir === 'bl';
+                    const topResize = resizeDir === 'tl' || resizeDir === 'tr';
+                    const widthDelta = leftResize ? (startX - e.clientX) : (e.clientX - startX);
+                    const heightDelta = topResize ? (startY - e.clientY) : (e.clientY - startY);
+                    const newW = Math.max(minW, startW + widthDelta);
+                    const newH = Math.max(minH, startH + heightDelta);
+                    panel.style.width = newW + 'px';
+                    panel.style.height = newH + 'px';
+                    if (leftResize) panel.style.left = (startPanelLeft - (newW - startW)) + 'px';
+                    if (topResize) panel.style.top = (startPanelTop - (newH - startH)) + 'px';
                 }
             });
             document.addEventListener('mouseup', () => { isDragging = false; isResizing = false; resizeDir = ''; });
