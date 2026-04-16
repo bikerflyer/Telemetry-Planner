@@ -1,0 +1,716 @@
+{
+  "type": "FeatureCollection",
+  "name": "caulerpa_priority_zones",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Hauraki Gulf Inner (Auckland East Coast)",
+        "priority": "High",
+        "priority_score_band": "34-45",
+        "scores": {
+          "introduction_risk": { "raw": 5, "weighted": 15 },
+          "environmental_fit": { "raw": 4, "weighted": 8 },
+          "proximity": { "raw": 5, "weighted": 10 },
+          "economic_social": { "raw": 5, "weighted": 10 }
+        },
+        "total_score": 43,
+        "override": null,
+        "rationale": "Highest vessel density in New Zealand with major marinas (Westhaven, Half Moon Bay, Gulf Harbour, Bayswater). Population of 1.7M+ drives massive recreational boating pressure. Direct connectivity to all confirmed Caulerpa CAN sites via regular vessel traffic. Marine reserves (Long Bay-Okura, Motu Manawa-Pollen Island) and HPAs (Rangitoto/Motutapu, Tiritiri Matangi) add ecological consequence.",
+        "key_factors": [
+          "Highest marina/vessel density in NZ",
+          "Population 1.7M+ with intense recreational use",
+          "Direct vessel connectivity to confirmed CAN sites",
+          "Long Bay-Okura and Motu Manawa marine reserves",
+          "Rangitoto/Motutapu and Tiritiri Matangi HPAs",
+          "Sheltered coastline with suitable Caulerpa habitat"
+        ],
+        "data_sources": [
+          "restricted_zones.geojson (Long Bay-Okura MR, Motu Manawa MR, Rangitoto/Motutapu HPA, Tiritiri Matangi HPA)",
+          "iNaturalist observations (Hauraki Gulf Central/Waiheke cluster)",
+          "can_areas.geojson (Waiheke CAN proximity)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [174.72, -36.58],
+            [174.82, -36.53],
+            [174.88, -36.62],
+            [174.92, -36.72],
+            [174.93, -36.82],
+            [174.88, -36.89],
+            [174.80, -36.92],
+            [174.72, -36.88],
+            [174.68, -36.78],
+            [174.68, -36.68],
+            [174.72, -36.58]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Hauraki Gulf Islands",
+        "priority": "High",
+        "priority_score_band": "34-45",
+        "scores": {
+          "introduction_risk": { "raw": 5, "weighted": 15 },
+          "environmental_fit": { "raw": 5, "weighted": 10 },
+          "proximity": { "raw": 5, "weighted": 10 },
+          "economic_social": { "raw": 4, "weighted": 8 }
+        },
+        "total_score": 43,
+        "override": "Protected areas and confirmed infestations — elevated to High. Multiple HPAs, marine reserves, and confirmed exotic Caulerpa CAN zones across Waiheke, Aotea/Great Barrier, and Hauturu/Little Barrier.",
+        "rationale": "Epicentre of confirmed exotic Caulerpa in New Zealand. Three of five confirmed CAN sites are in this zone (Waiheke, Aotea/Great Barrier, Hauturu/Little Barrier). 30 exotic iNaturalist observations recorded. Multiple HPAs (The Noises, Motukawao, Pakatoa/Tarahiki) and Te Matuku Marine Reserve add ecological consequence. High vessel traffic from Auckland ferries and recreational boats.",
+        "key_factors": [
+          "Three confirmed CAN sites (Waiheke, Aotea, Hauturu)",
+          "30 exotic Caulerpa iNaturalist observations",
+          "Te Matuku Marine Reserve (Waiheke)",
+          "The Noises, Motukawao, Pakatoa/Tarahiki HPAs",
+          "Heavy ferry and recreational vessel traffic",
+          "Sheltered bays with ideal Caulerpa habitat"
+        ],
+        "data_sources": [
+          "can_areas.geojson (Waiheke CAN, Aotea/Great Barrier CAN zones, Hauturu CAN, Ahuahu CAN)",
+          "restricted_zones.geojson (Te Matuku MR, The Noises HPA, Motukawao HPA, Pakatoa/Tarahiki HPA, Hauturu HPA)",
+          "iNaturalist observations (80 obs Hauraki Gulf North, 56 obs Central/Waiheke)"
+        ],
+        "known_infestations": [
+          "Waiheke Island — Onetangi Bay (C. brachypus/parvifolia), confirmed CAN",
+          "Aotea/Great Barrier Island (C. brachypus, C. parvifolia), confirmed CAN with red and yellow zones",
+          "Hauturu/Little Barrier Island, confirmed CAN red zone"
+        ]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [174.95, -36.88],
+            [175.10, -36.85],
+            [175.42, -36.78],
+            [175.55, -36.60],
+            [175.52, -36.30],
+            [175.48, -36.05],
+            [175.30, -36.02],
+            [175.10, -36.15],
+            [174.98, -36.40],
+            [174.93, -36.60],
+            [174.95, -36.88]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Ōmaha/Matakana Coast",
+        "priority": "High",
+        "priority_score_band": "34-45",
+        "scores": {
+          "introduction_risk": { "raw": 4, "weighted": 12 },
+          "environmental_fit": { "raw": 4, "weighted": 8 },
+          "proximity": { "raw": 4, "weighted": 8 },
+          "economic_social": { "raw": 4, "weighted": 8 }
+        },
+        "total_score": 36,
+        "override": "Active rāhui (Ōmaha Bay Temporary Closure) and marine reserves elevate to High. Cape Rodney-Okakari Point and Tawharanui marine reserves, Kawau Bay HPA present.",
+        "rationale": "Active rāhui from Cape Rodney to Tāwharanui signals iwi concern and ecological sensitivity. Two significant marine reserves (Cape Rodney-Okakari Point, Tawharanui) and Kawau Bay HPA. Popular weekend anchoring and boating destination with direct vessel traffic from Auckland. Proximity to Hauraki Gulf island CAN sites creates spread corridor.",
+        "key_factors": [
+          "Active Ōmaha Bay rāhui (Cape Rodney to Tāwharanui)",
+          "Cape Rodney-Okakari Point Marine Reserve",
+          "Tawharanui Marine Reserve",
+          "Kawau Bay HPA",
+          "Popular recreational anchoring area",
+          "Vessel corridor from Auckland to Hauraki Gulf"
+        ],
+        "data_sources": [
+          "rahui.geojson (Ōmaha Bay Temporary Closure, lat -36.362 to -36.279)",
+          "restricted_zones.geojson (Cape Rodney-Okakari Point MR, Tawharanui MR, Kawau Bay HPA)",
+          "can_areas.geojson (proximity to Gulf island CAN zones)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [174.72, -36.42],
+            [174.82, -36.42],
+            [174.88, -36.38],
+            [174.90, -36.32],
+            [174.86, -36.26],
+            [174.80, -36.22],
+            [174.74, -36.24],
+            [174.70, -36.30],
+            [174.68, -36.36],
+            [174.72, -36.42]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Coromandel Peninsula",
+        "priority": "Medium",
+        "priority_score_band": "22-33",
+        "scores": {
+          "introduction_risk": { "raw": 3, "weighted": 9 },
+          "environmental_fit": { "raw": 4, "weighted": 8 },
+          "proximity": { "raw": 3, "weighted": 6 },
+          "economic_social": { "raw": 3, "weighted": 6 }
+        },
+        "total_score": 29,
+        "override": null,
+        "rationale": "Eastern Coromandel coast has good Caulerpa habitat in sheltered bays and moderate vessel traffic from Auckland recreational boats. Cathedral Cove Marine Reserve, Cape Colville HPA, Slipper Island HPA, and Aldermen Islands HPA add ecological value. Ahuahu/Great Mercury Island confirmed CAN is immediately offshore. Seasonal tourism brings elevated vessel traffic in summer.",
+        "key_factors": [
+          "Cathedral Cove Marine Reserve",
+          "Cape Colville, Slipper Island, Aldermen Islands HPAs",
+          "Ahuahu/Great Mercury CAN nearby",
+          "Sheltered bays with suitable habitat",
+          "Moderate seasonal vessel traffic",
+          "10 iNat observations (1 exotic) in area"
+        ],
+        "data_sources": [
+          "restricted_zones.geojson (Cathedral Cove MR, Cape Colville HPA, Slipper Island HPA, Aldermen Islands HPA)",
+          "can_areas.geojson (Ahuahu/Great Mercury Island CAN)",
+          "iNaturalist observations (Hauraki Gulf South/Coromandel North)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [175.48, -36.92],
+            [175.80, -36.88],
+            [175.90, -36.78],
+            [175.88, -36.58],
+            [175.78, -36.38],
+            [175.62, -36.22],
+            [175.50, -36.30],
+            [175.42, -36.50],
+            [175.40, -36.72],
+            [175.48, -36.92]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Bay of Islands",
+        "priority": "High",
+        "priority_score_band": "34-45",
+        "scores": {
+          "introduction_risk": { "raw": 5, "weighted": 15 },
+          "environmental_fit": { "raw": 5, "weighted": 10 },
+          "proximity": { "raw": 5, "weighted": 10 },
+          "economic_social": { "raw": 4, "weighted": 8 }
+        },
+        "total_score": 43,
+        "override": null,
+        "rationale": "Te Rāwhiti confirmed CAN red zone is within this area — one of the earliest confirmed exotic Caulerpa sites in New Zealand. Intense vessel traffic from charter boats, cruise ships, and recreational boats. 141 iNaturalist observations including 4 exotic records. Warm sheltered waters provide ideal Caulerpa habitat. Strong iwi values throughout the Bay of Islands. Major tourism hub with international vessels.",
+        "key_factors": [
+          "Te Rāwhiti confirmed exotic Caulerpa CAN (red zone)",
+          "141 iNaturalist observations (4 exotic)",
+          "Intense charter/cruise/recreational vessel traffic",
+          "Warm sheltered waters — ideal Caulerpa habitat",
+          "Strong iwi values and cultural significance",
+          "International vessel destination"
+        ],
+        "data_sources": [
+          "can_areas.geojson (Te Rāwhiti Exotic Caulerpa High Risk Zone, lat -35.262 to -35.227)",
+          "iNaturalist observations (Far North cluster, 141 obs, 4 exotic)"
+        ],
+        "known_infestations": [
+          "Te Rāwhiti, Bay of Islands — confirmed exotic Caulerpa CAN red zone"
+        ]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [174.00, -35.32],
+            [174.12, -35.30],
+            [174.25, -35.22],
+            [174.35, -35.14],
+            [174.32, -35.08],
+            [174.18, -35.06],
+            [174.05, -35.10],
+            [173.96, -35.18],
+            [173.95, -35.26],
+            [174.00, -35.32]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Whangaroa Harbour",
+        "priority": "High",
+        "priority_score_band": "34-45",
+        "scores": {
+          "introduction_risk": { "raw": 4, "weighted": 12 },
+          "environmental_fit": { "raw": 5, "weighted": 10 },
+          "proximity": { "raw": 4, "weighted": 8 },
+          "economic_social": { "raw": 3, "weighted": 6 }
+        },
+        "total_score": 36,
+        "override": null,
+        "rationale": "Deep sheltered harbour used as vessel refuge and popular anchorage. Very close proximity to Bay of Islands confirmed CAN site creates high spread risk via vessel movement. Northern location provides warm water temperatures and high environmental suitability for exotic Caulerpa. Game fishing hub attracts vessels from across Northland.",
+        "key_factors": [
+          "Sheltered harbour — vessel refuge and anchorage",
+          "Close proximity to Bay of Islands CAN site",
+          "Northern warm-water environmental suitability",
+          "Game fishing hub with vessel traffic",
+          "Soft sediment habitat suitable for Caulerpa",
+          "Connected vessel traffic patterns with Far North"
+        ],
+        "data_sources": [
+          "can_areas.geojson (Te Rāwhiti CAN proximity)",
+          "iNaturalist observations (Far North/Whangaroa cluster)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [173.72, -35.05],
+            [173.80, -35.06],
+            [173.86, -35.02],
+            [173.86, -34.95],
+            [173.82, -34.90],
+            [173.74, -34.88],
+            [173.68, -34.92],
+            [173.66, -34.98],
+            [173.72, -35.05]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Whangarei Harbour & Bream Bay",
+        "priority": "High",
+        "priority_score_band": "34-45",
+        "scores": {
+          "introduction_risk": { "raw": 5, "weighted": 15 },
+          "environmental_fit": { "raw": 4, "weighted": 8 },
+          "proximity": { "raw": 3, "weighted": 6 },
+          "economic_social": { "raw": 4, "weighted": 8 }
+        },
+        "total_score": 37,
+        "override": null,
+        "rationale": "Marsden Point is a major commercial port and oil refinery wharf, bringing domestic and international vessel traffic. Regional spread hub between Auckland and Far North confirmed CAN sites. Aquaculture operations (mussel/oyster) in the area increase consequence of infestation. Town Basin marina is a key recreational hub for Northland.",
+        "key_factors": [
+          "Marsden Point commercial port",
+          "Regional spread hub (Auckland — Far North corridor)",
+          "Aquaculture operations in Bream Bay area",
+          "Town Basin marina — Northland recreational hub",
+          "8 iNaturalist observations in area",
+          "Sheltered harbour habitat"
+        ],
+        "data_sources": [
+          "iNaturalist observations (Whangarei/Bream Bay, 8 obs, 0 exotic)",
+          "can_areas.geojson (positioned between Auckland and Far North CAN sites)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [174.32, -35.88],
+            [174.52, -35.90],
+            [174.58, -35.82],
+            [174.55, -35.74],
+            [174.46, -35.70],
+            [174.35, -35.72],
+            [174.28, -35.76],
+            [174.26, -35.82],
+            [174.32, -35.88]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Tauranga Harbour",
+        "priority": "High",
+        "priority_score_band": "34-45",
+        "scores": {
+          "introduction_risk": { "raw": 5, "weighted": 15 },
+          "environmental_fit": { "raw": 4, "weighted": 8 },
+          "proximity": { "raw": 2, "weighted": 4 },
+          "economic_social": { "raw": 5, "weighted": 10 }
+        },
+        "total_score": 37,
+        "override": null,
+        "rationale": "New Zealand's largest export port by volume with major international vessel traffic and ballast water risk. Tauranga Bridge Marina and adjacent marinas provide significant recreational vessel density. Fast-growing population centre (190K+). Wider Bay of Plenty has mussel farming and aquaculture operations. Sheltered harbour with suitable Caulerpa habitat.",
+        "key_factors": [
+          "NZ's largest export port (international vessel/ballast risk)",
+          "Tauranga Bridge Marina and recreational fleet",
+          "Fast-growing population centre (190K+)",
+          "Bay of Plenty aquaculture (mussel farms)",
+          "Sheltered harbour with soft sediment habitat",
+          "1 exotic iNat observation south of Tauranga"
+        ],
+        "data_sources": [
+          "iNaturalist observations (south of Tauranga, 418 obs, 1 exotic)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [176.05, -37.72],
+            [176.18, -37.72],
+            [176.28, -37.68],
+            [176.30, -37.62],
+            [176.22, -37.56],
+            [176.10, -37.55],
+            [176.02, -37.58],
+            [175.98, -37.64],
+            [176.05, -37.72]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Kaipara Harbour",
+        "priority": "Medium",
+        "priority_score_band": "22-33",
+        "scores": {
+          "introduction_risk": { "raw": 2, "weighted": 6 },
+          "environmental_fit": { "raw": 4, "weighted": 8 },
+          "proximity": { "raw": 2, "weighted": 4 },
+          "economic_social": { "raw": 4, "weighted": 8 }
+        },
+        "total_score": 26,
+        "override": null,
+        "rationale": "New Zealand's largest harbour by area with extensive soft sediment and sheltered waters providing excellent Caulerpa habitat. Significant iwi and customary fishing areas throughout. Established oyster farming industry at risk. Lower vessel traffic than east coast harbours reduces introduction risk, but any introduction would be difficult to manage given the harbour's size.",
+        "key_factors": [
+          "Largest harbour in NZ — extensive Caulerpa habitat",
+          "Significant iwi/customary fishing areas",
+          "Oyster farming industry",
+          "Lower vessel traffic than east coast",
+          "Difficult to manage if Caulerpa established",
+          "Sheltered with suitable sediment"
+        ],
+        "data_sources": [
+          "General regional assessment (no specific Caulerpa observations)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [174.18, -36.60],
+            [174.30, -36.58],
+            [174.38, -36.48],
+            [174.35, -36.32],
+            [174.25, -36.22],
+            [174.12, -36.18],
+            [174.02, -36.28],
+            [174.00, -36.42],
+            [174.08, -36.55],
+            [174.18, -36.60]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Mahurangi Harbour",
+        "priority": "Medium",
+        "priority_score_band": "22-33",
+        "scores": {
+          "introduction_risk": { "raw": 3, "weighted": 9 },
+          "environmental_fit": { "raw": 4, "weighted": 8 },
+          "proximity": { "raw": 4, "weighted": 8 },
+          "economic_social": { "raw": 3, "weighted": 6 }
+        },
+        "total_score": 31,
+        "override": "Iwi significance and proximity to confirmed Gulf island infestations — minimum Medium maintained. Additional risk factors from vessel traffic and habitat suitability are present but do not reach High threshold.",
+        "rationale": "Sheltered harbour close to confirmed Hauraki Gulf island infestations. Popular mooring and anchoring area with regular vessel traffic from Auckland. Historical oyster farming area. Vessels transiting between Auckland and the outer Hauraki Gulf pass through or near this area. Iwi significance of the harbour and surrounding coast.",
+        "key_factors": [
+          "Close proximity to Gulf island CAN sites",
+          "Popular mooring and anchoring area",
+          "Historical oyster farming",
+          "Sheltered harbour — good Caulerpa habitat",
+          "Vessel transit corridor to outer Gulf",
+          "Iwi cultural significance"
+        ],
+        "data_sources": [
+          "can_areas.geojson (proximity to Aotea, Hauturu, Waiheke CAN zones)",
+          "restricted_zones.geojson (nearby Kawau Bay HPA)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [174.70, -36.54],
+            [174.76, -36.53],
+            [174.78, -36.48],
+            [174.76, -36.44],
+            [174.72, -36.42],
+            [174.68, -36.44],
+            [174.66, -36.48],
+            [174.68, -36.52],
+            [174.70, -36.54]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Waitematā Harbour / Central Auckland",
+        "priority": "High",
+        "priority_score_band": "34-45",
+        "scores": {
+          "introduction_risk": { "raw": 5, "weighted": 15 },
+          "environmental_fit": { "raw": 3, "weighted": 6 },
+          "proximity": { "raw": 5, "weighted": 10 },
+          "economic_social": { "raw": 5, "weighted": 10 }
+        },
+        "total_score": 41,
+        "override": null,
+        "rationale": "Westhaven Marina is the largest marina in the southern hemisphere and the primary vessel hub connecting all regions of the upper North Island. All recreational and many commercial vessels transit through the Waitematā. Motu Manawa-Pollen Island Marine Reserve is within the harbour. Highest population exposure of any zone. Any Caulerpa introduction here would have maximum spread potential via vessel traffic to every other zone.",
+        "key_factors": [
+          "Westhaven Marina — largest in southern hemisphere",
+          "Primary vessel hub connecting all regions",
+          "Motu Manawa-Pollen Island Marine Reserve",
+          "Maximum population exposure (Auckland CBD waterfront)",
+          "Highest spread potential via vessel traffic",
+          "Commercial and recreational vessel concentration"
+        ],
+        "data_sources": [
+          "restricted_zones.geojson (Motu Manawa-Pollen Island MR, lat -36.873 to -36.852)",
+          "can_areas.geojson (vessel connectivity to all CAN sites)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [174.72, -36.86],
+            [174.78, -36.86],
+            [174.82, -36.84],
+            [174.84, -36.82],
+            [174.82, -36.80],
+            [174.76, -36.80],
+            [174.72, -36.82],
+            [174.70, -36.84],
+            [174.72, -36.86]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Tāmaki Strait / Firth of Thames",
+        "priority": "Medium",
+        "priority_score_band": "22-33",
+        "scores": {
+          "introduction_risk": { "raw": 3, "weighted": 9 },
+          "environmental_fit": { "raw": 4, "weighted": 8 },
+          "proximity": { "raw": 3, "weighted": 6 },
+          "economic_social": { "raw": 4, "weighted": 8 }
+        },
+        "total_score": 31,
+        "override": null,
+        "rationale": "Connecting waterway between confirmed Waiheke CAN site and the wider Hauraki Gulf. Significant mussel and oyster aquaculture in the Firth of Thames. Thames/Kopu commercial wharf provides vessel introduction pathway. Miranda/Firth wetlands have high iwi significance. Sheltered shallow waters with extensive soft sediment provide good Caulerpa habitat across a large area.",
+        "key_factors": [
+          "Connecting waterway between CAN sites",
+          "Mussel/oyster aquaculture in Firth",
+          "Thames/Kopu commercial wharf",
+          "Miranda/Firth wetlands (iwi significance)",
+          "Extensive shallow soft sediment habitat",
+          "Vessel traffic corridor"
+        ],
+        "data_sources": [
+          "can_areas.geojson (Waiheke CAN connectivity)",
+          "iNaturalist observations (Hauraki Gulf South area)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [175.00, -36.92],
+            [175.22, -36.88],
+            [175.42, -36.80],
+            [175.55, -36.95],
+            [175.52, -37.10],
+            [175.35, -37.15],
+            [175.15, -37.08],
+            [175.00, -36.98],
+            [175.00, -36.92]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Exposed West Coast Reference Zone",
+        "priority": "Low",
+        "priority_score_band": "<22",
+        "scores": {
+          "introduction_risk": { "raw": 1, "weighted": 3 },
+          "environmental_fit": { "raw": 1, "weighted": 2 },
+          "proximity": { "raw": 1, "weighted": 2 },
+          "economic_social": { "raw": 2, "weighted": 4 }
+        },
+        "total_score": 11,
+        "override": null,
+        "rationale": "High-energy exposed west coast with heavy swells and strong currents provide poor Caulerpa habitat. Very low vessel density with no significant marinas or anchorages along this stretch. Included as a low-priority comparative reference zone to calibrate the scoring model against areas of genuinely low risk. Rocky exposed coastline with limited soft sediment.",
+        "key_factors": [
+          "High-energy exposed coastline",
+          "Heavy swells and strong currents",
+          "Very low vessel density",
+          "No significant marinas or anchorages",
+          "Rocky substrate — poor Caulerpa habitat",
+          "Comparative reference zone"
+        ],
+        "data_sources": [
+          "General regional assessment (comparative reference)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [174.02, -36.90],
+            [174.12, -36.90],
+            [174.14, -36.60],
+            [174.12, -36.30],
+            [174.08, -36.05],
+            [173.96, -36.05],
+            [173.94, -36.30],
+            [173.96, -36.60],
+            [174.02, -36.90]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Manukau Harbour",
+        "priority": "Medium",
+        "priority_score_band": "22-33",
+        "scores": {
+          "introduction_risk": { "raw": 3, "weighted": 9 },
+          "environmental_fit": { "raw": 3, "weighted": 6 },
+          "proximity": { "raw": 2, "weighted": 4 },
+          "economic_social": { "raw": 4, "weighted": 8 }
+        },
+        "total_score": 27,
+        "override": null,
+        "rationale": "Large enclosed harbour on Auckland's west coast. International airport proximity means ballast water and biofouling risk from nearby Onehunga port. Iwi significant to Tainui with extensive customary fishing areas. Lower recreational vessel density than east coast harbours but still substantial given Auckland population. Harbour has areas of suitable Caulerpa habitat in sheltered upper reaches.",
+        "key_factors": [
+          "Large enclosed harbour",
+          "Auckland international airport proximity",
+          "Iwi significant to Tainui",
+          "Customary fishing areas",
+          "Lower recreational vessel density than east coast",
+          "Suitable habitat in sheltered upper reaches"
+        ],
+        "data_sources": [
+          "General regional assessment"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [174.52, -37.10],
+            [174.62, -37.08],
+            [174.72, -37.02],
+            [174.76, -36.95],
+            [174.70, -36.90],
+            [174.58, -36.88],
+            [174.48, -36.92],
+            [174.44, -37.00],
+            [174.52, -37.10]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone": "Outer Hauraki Gulf / Mokohinau",
+        "priority": "Medium",
+        "priority_score_band": "22-33",
+        "scores": {
+          "introduction_risk": { "raw": 2, "weighted": 6 },
+          "environmental_fit": { "raw": 3, "weighted": 6 },
+          "proximity": { "raw": 3, "weighted": 6 },
+          "economic_social": { "raw": 3, "weighted": 6 }
+        },
+        "total_score": 24,
+        "override": "Mokohinau Islands HPA — protected area override elevates minimum priority to Medium.",
+        "rationale": "Remote outer Gulf waters centred on Mokohinau Islands HPA. Connected to confirmed CAN sites via recreational and fishing vessel traffic — potential stepping stone for Caulerpa spread between Hauturu/Little Barrier and the wider Gulf. More exposed than inner Gulf but Mokohinau group provides some sheltered habitat. Lower vessel traffic than inner Gulf but regular fishing and diving visits.",
+        "key_factors": [
+          "Mokohinau Islands HPA",
+          "Connected via vessel traffic to CAN sites",
+          "Potential stepping stone for spread",
+          "Regular fishing and diving vessel visits",
+          "More exposed than inner Gulf",
+          "Protected area ecological values"
+        ],
+        "data_sources": [
+          "restricted_zones.geojson (Mokohinau Islands HPA)",
+          "can_areas.geojson (Hauturu CAN proximity)"
+        ],
+        "known_infestations": []
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [175.02, -36.00],
+            [175.18, -35.98],
+            [175.28, -35.90],
+            [175.30, -35.80],
+            [175.22, -35.72],
+            [175.08, -35.70],
+            [174.98, -35.78],
+            [174.95, -35.88],
+            [175.02, -36.00]
+          ]
+        ]
+      }
+    }
+  ]
+}

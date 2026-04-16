@@ -268,6 +268,41 @@ All rights reserved. No redistribution, modification, or reuse without written p
         .stat-item:last-child { margin-bottom: 0; }
         .stat-label { color: var(--text-secondary); font-weight: 300; }
         .stat-value { color: var(--accent-primary); font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+        .placename-label {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            color: #f8fafc;
+            font-family: 'Sora', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-shadow: 0 0 3px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.75);
+            white-space: nowrap;
+        }
+        .placename-label.placename-town { color: #fde68a; font-size: 0.82rem; }
+        .placename-label.placename-locality { color: #fef3c7; font-size: 0.75rem; }
+        .placename-label.placename-lake,
+        .placename-label.placename-bay,
+        .placename-label.placename-harbour,
+        .placename-label.placename-strait,
+        .placename-label.placename-channel,
+        .placename-label.placename-island,
+        .placename-label.placename-islands,
+        .placename-label.placename-beach,
+        .placename-label.placename-cape,
+        .placename-label.placename-peninsula,
+        .placename-label.placename-cove,
+        .placename-label.placename-point,
+        .placename-label.placename-reef,
+        .placename-label.placename-rock,
+        .placename-label.placename-rocks,
+        .placename-label.placename-bank {
+            color: #111111;
+            font-size: 0.72rem;
+            font-weight: 500;
+            text-shadow: 0 0 2px rgba(255,255,255,0.95), 0 0 5px rgba(255,255,255,0.85);
+        }
+        .mpi-popup-title { font-weight: 700; color: #111827; }
 
         .survey-panel {
             position: fixed; top: 1rem; right: 1rem;
@@ -410,6 +445,9 @@ All rights reserved. No redistribution, modification, or reuse without written p
         .planner-grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
         .planner-grid-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
         .planner-grid-actions button { flex: 1; }
+        .route-selection-toolbar { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .route-selection-toolbar .btn { flex: 1; }
+        .route-selection-status { margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-secondary); }
         .planner-grid-status { margin-top: 0.45rem; font-size: 0.78rem; color: var(--text-secondary); }
         .mission-info { margin-top: 0.45rem; font-size: 0.78rem; color: var(--text-secondary); background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; padding: 0.45rem 0.5rem; }
         .route-leg-list {
@@ -424,6 +462,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
             color: var(--text-secondary);
         }
         .route-leg-row { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.2rem 0; border-bottom: 1px dashed rgba(0,0,0,0.06); }
+        .route-leg-row.selected { background: rgba(245, 158, 11, 0.12); border-radius: 6px; padding-left: 0.35rem; padding-right: 0.35rem; }
         .route-leg-row:last-child { border-bottom: none; }
         .route-leg-row .leg-name { color: var(--text-primary); font-weight: 600; }
         .route-leg-label-icon {
@@ -447,6 +486,19 @@ All rights reserved. No redistribution, modification, or reuse without written p
             box-shadow: 0 1px 2px rgba(0,0,0,0.18);
             pointer-events: auto;
             cursor: pointer;
+        }
+        .route-leg-label-text.selected {
+            background: #f59e0b;
+            border-color: #d97706;
+            color: #111827;
+            box-shadow: 0 0 0 2px rgba(245,158,11,0.28), 0 1px 2px rgba(0,0,0,0.18);
+        }
+        .route-leg-box-select {
+            position: absolute;
+            border: 2px dashed #f59e0b;
+            background: rgba(245, 158, 11, 0.14);
+            pointer-events: none;
+            z-index: 1200;
         }
         .boundary-leg-label-text {
             font-family: 'JetBrains Mono', monospace;
@@ -518,6 +570,15 @@ All rights reserved. No redistribution, modification, or reuse without written p
         .sighting-tag {
             font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 3px;
             background: rgba(0, 102, 204, 0.1); color: var(--accent-primary);
+        }
+        .sighting-marker-dot {
+            width: 12px; height: 12px;
+            background: #ff7f0e; border: 1.5px solid #fff; border-radius: 50%;
+            box-shadow: 0 0 4px rgba(255,127,14,0.7);
+            color: #fff; font-family: 'JetBrains Mono', monospace;
+            font-size: 6px; font-weight: 700; line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center;
         }
 
         .sighting-notes-input {
@@ -948,6 +1009,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
                                     <button class="btn btn-green" id="btnGenerateTransectGrid">Generate</button>
                                     <button class="btn btn-secondary" id="btnClearTransectGrid">Clear</button>
                                 </div>
+                                <div class="route-selection-toolbar">
+                                    <button class="btn btn-secondary" id="btnRouteBoxSelect">Box Select Legs</button>
+                                    <button class="btn btn-secondary" id="btnEditSelectedRouteLegs" disabled>Edit Selected Legs</button>
+                                </div>
+                                <div class="route-selection-status" id="routeSelectionStatus">Click a route leg label to select one leg. Ctrl/Cmd-click adds, Shift-click selects a range.</div>
                                 <div class="planner-grid-status" id="gridPlannerStatus">Draw a boundary leg, then generate a grid.</div>
                                 <div class="mission-info" id="gpsMissionInfo">Route Mission: 0 waypoints</div>
                                 <div class="mission-info" id="routeSummaryInfo">Start: - • Finish: - • Geofence: OK</div>
@@ -1049,6 +1115,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                     <select id="routePatternType">
                         <option value="spiral">Spiral Route</option>
                         <option value="lawnmower">Lawnmower Route</option>
+                        <option value="sawtooth">Sawtooth Route</option>
                         </select>
                     </div>
                     <div class="survey-field">
@@ -1290,6 +1357,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
         let routeSelectedWaypointIds = new Set();
         let routeSelectedLegIdxs = new Set();
         let routeSelectionAnchorWaypointId = null;
+        let routeSelectionAnchorLegIdx = null;
         let routeSelectionOverlayLayer = null;
         let routeLegLabelLayer = null;
         let gpsLegAnchorId = null;
@@ -1315,6 +1383,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
         let boundaryCirclePreview = null;
         let routeDrawing = false, routePreviewLine = null;
         let _docListenersBound = false;
+        let placenameData = null, placenameCoastalLayerGroup = null;
+        let mpiOverlayCache = {};
+        let mpiCanLayerGroup = null, rahuiLayerGroup = null, restrictedZonesLayerGroup = null;
+        let wmpSightingsLayerGroup = null, inatCaulerpaLayerGroup = null, priorityZonesLayerGroup = null;
+        let caulerpaLayerGroup = null, caulerpaLayerActive = false;
         let overlayTracks = [], overlayTrackLayerGroup = null;
         const BOUNDARY_ATTACH_KM = 0.012; // ~12 meters
         const ROUTE_CONTEXT_ATTACH_KM = 0.003; // ~3 meters — must be nearly on the line
@@ -1327,6 +1400,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
         let ctxOnRouteLeg = false;
         let routePatternAnchorId = null;
         let routePatternAnchorLatLng = null;
+        let routeLegBoxSelectMode = false;
+        let routeLegBoxSelecting = false;
+        let routeLegBoxStartPoint = null;
+        let routeLegBoxOverlayEl = null;
+        let routeLegBoxIgnoreClickUntil = 0;
         let ctxBoundaryLabelIdx = null;
         let ctxBoundarySegIdx = null;
         let ctxOnRuler = false;
@@ -1490,7 +1568,10 @@ All rights reserved. No redistribution, modification, or reuse without written p
         const btnGenerateTransectGrid = document.getElementById('btnGenerateTransectGrid');
         const btnClearTransectGrid = document.getElementById('btnClearTransectGrid');
         const btnReverseGpsRoute = document.getElementById('btnReverseGpsRoute');
+        const btnRouteBoxSelect = document.getElementById('btnRouteBoxSelect');
+        const btnEditSelectedRouteLegs = document.getElementById('btnEditSelectedRouteLegs');
         const gridPlannerStatus = document.getElementById('gridPlannerStatus');
+        const routeSelectionStatus = document.getElementById('routeSelectionStatus');
         const gpsMissionInfo = document.getElementById('gpsMissionInfo');
         const routeSummaryInfo = document.getElementById('routeSummaryInfo');
         const routeLegList = document.getElementById('routeLegList');
@@ -1907,6 +1988,14 @@ All rights reserved. No redistribution, modification, or reuse without written p
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
+        function getEventClientPoint(evt) {
+            const oe = evt?.originalEvent || evt?.domEvent || evt;
+            const t = oe?.touches?.[0] || oe?.changedTouches?.[0];
+            return {
+                clientX: t?.clientX ?? oe?.clientX ?? 0,
+                clientY: t?.clientY ?? oe?.clientY ?? 0
+            };
+        }
         function getBearing(lat1, lon1, lat2, lon2) {
             const toRad = x => x * Math.PI / 180;
             const toDeg = x => x * 180 / Math.PI;
@@ -2054,6 +2143,25 @@ All rights reserved. No redistribution, modification, or reuse without written p
             const derived = match ? parseInt(match[1], 10) : NaN;
             return Number.isFinite(derived) && derived > 0 ? derived : fallback;
         }
+        function getSightingMarkerNumber(sightingId) {
+            const sighting = sightings.find(s => String(s.id) === String(sightingId));
+            const num = Number(sighting?.markerNumber);
+            if (!Number.isFinite(num) || num <= 0) return '';
+            return String(Math.min(num, 99));
+        }
+        function getSightingMarkerZIndex(sightingId) {
+            const sighting = sightings.find(s => String(s.id) === String(sightingId));
+            const num = Number(sighting?.markerNumber);
+            if (!Number.isFinite(num) || num <= 0) return 0;
+            return 10000 - num;
+        }
+        function getSightingMarkerVisual() {
+            const zoom = map?.getZoom?.() ?? 15;
+            const size = Math.max(9, Math.min(18, 12 + ((zoom - 15) * 1.1)));
+            const borderWidth = Math.max(1.2, Math.min(2.5, size * 0.16));
+            const fontSize = Math.max(5, Math.min(9, size * 0.5));
+            return { size, borderWidth, fontSize };
+        }
         function uuid() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8); return v.toString(16); }); }
         function latLngToArray(ll) { return [ll.lat, ll.lng]; }
         function coordKey(lat, lon, precision = 7) {
@@ -2150,23 +2258,329 @@ All rights reserved. No redistribution, modification, or reuse without written p
             return makeCircleDotIcon({ size: 12, border: 2, bg: fill, shadow: `${color}66`, className: 'overlay-waypoint-dot' });
         }
         function createOverlaySightingMarkerIcon(sighting, index = 0) {
-            const match = String(sighting?.name || '').match(/(\d+)(?!.*\d)/);
-            const number = match ? Math.min(parseInt(match[1], 10), 99) : Math.min(index + 1, 99);
+            const label = String(Math.min(deriveSightingNumber(sighting?.name, index + 1), 99));
+            const { size, borderWidth, fontSize } = getSightingMarkerVisual();
             return L.divIcon({
-                className: 'overlay-sighting-marker',
-                html: `<div style="width:12px;height:12px;border:1.5px solid #111827;border-radius:50%;background:#ffffff;color:#111827;box-shadow:0 0 8px rgba(0,0,0,0.28);font-size:6px;font-weight:700;display:flex;align-items:center;justify-content:center;">${number}</div>`,
-                iconSize: [12, 12],
-                iconAnchor: [6, 6]
+                className: 'sighting-marker overlay-sighting-marker',
+                html: `<div class="sighting-marker-dot" style="width:${size}px;height:${size}px;border-width:${borderWidth}px;font-size:${fontSize}px;background:#ffffff;color:#111827;border-color:#111827;box-shadow:0 0 8px rgba(0,0,0,0.28);">${label}</div>`,
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size / 2]
             });
         }
         function createSurveySightingMarkerIcon(sighting) {
-            const number = Math.min(deriveSightingNumber(sighting?.name, sighting?.markerNumber || 1), 99);
+            const label = getSightingMarkerNumber(sighting?.id);
+            const { size, borderWidth, fontSize } = getSightingMarkerVisual();
             return L.divIcon({
                 className: 'sighting-marker',
-                html: `<div style="width:12px;height:12px;border:1.5px solid #ffffff;border-radius:50%;background:#ff7f0e;color:#ffffff;box-shadow:0 0 8px rgba(255,127,14,0.7);font-size:6px;font-weight:700;display:flex;align-items:center;justify-content:center;">${number}</div>`,
-                iconSize: [12, 12],
-                iconAnchor: [6, 6]
+                html: `<div class="sighting-marker-dot" style="width:${size}px;height:${size}px;border-width:${borderWidth}px;font-size:${fontSize}px;">${label}</div>`,
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size / 2]
             });
+        }
+        async function loadPlacenameData() {
+            if (placenameData) return placenameData;
+            const response = await fetch('files/nz_coastal_lakes_places.geojson');
+            if (!response.ok) throw new Error(`Placenames fetch failed: ${response.status}`);
+            placenameData = await response.json();
+            return placenameData;
+        }
+        function placenameZoomThreshold(kind, props) {
+            const population = Number(props.population) || 0;
+            if (kind === 'town') return (props.population || 0) >= 5000 ? 8 : 9;
+            if (kind === 'locality') {
+                if (population >= 5000) return 9;
+                if (population >= 1000) return 10;
+                return 11;
+            }
+            if (['settlement', 'village', 'hamlet', 'suburb'].includes(kind)) {
+                if (population >= 1000) return 10;
+                return 11;
+            }
+            if (['bay', 'lake', 'harbour', 'strait', 'channel'].includes(kind)) return 9;
+            if (['island', 'islands', 'beach', 'cape', 'peninsula', 'cove'].includes(kind)) return 10;
+            return 11;
+        }
+        function normalizePlacenameLabel(name) {
+            return String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        }
+        function placenamePriority(kind) {
+            if (kind === 'town') return 1;
+            if (kind === 'locality') return 2;
+            if (['settlement', 'village', 'hamlet', 'suburb'].includes(kind)) return 3;
+            if (['bay', 'lake', 'harbour', 'strait', 'channel'].includes(kind)) return 4;
+            if (['island', 'islands', 'beach', 'cape', 'peninsula', 'cove', 'point'].includes(kind)) return 5;
+            return 6;
+        }
+        function placenameLabelBox(point, name, kind) {
+            const fontSize = kind === 'town' ? 10.2 : kind === 'locality' ? 9.3 : ['settlement', 'village', 'hamlet', 'suburb'].includes(kind) ? 8.8 : 8.6;
+            const width = Math.max(28, Math.min(180, name.length * (fontSize * 0.56)));
+            const height = fontSize + 6;
+            return { left: point.x - width / 2, right: point.x + width / 2, top: point.y - height / 2, bottom: point.y + height / 2 };
+        }
+        function placenameBoxesOverlap(a, b, padding = 3) {
+            return !(a.right + padding < b.left || a.left - padding > b.right || a.bottom + padding < b.top || a.top - padding > b.bottom);
+        }
+        function renderPlacenameLayers() {
+            if (!map || !placenameData?.features?.length) return;
+            if (placenameCoastalLayerGroup) placenameCoastalLayerGroup.clearLayers();
+            const zoom = map.getZoom();
+            const bounds = map.getBounds().pad(0.15);
+            if (!(placenameCoastalLayerGroup && map.hasLayer(placenameCoastalLayerGroup))) return;
+            const candidates = [];
+            for (const feature of placenameData.features) {
+                const [lng, lat] = feature.geometry?.coordinates || [];
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+                if (!bounds.contains([lat, lng])) continue;
+                const props = feature.properties || {};
+                const name = props.name || 'Place';
+                const kind = props.kind || 'place';
+                if (zoom < placenameZoomThreshold(kind, props)) continue;
+                candidates.push({
+                    lat, lng, name, kind,
+                    priority: placenamePriority(kind),
+                    normalizedName: normalizePlacenameLabel(name),
+                    population: Number(props.population) || 0
+                });
+            }
+            candidates.sort((a, b) => {
+                if (a.priority !== b.priority) return a.priority - b.priority;
+                if (a.population !== b.population) return b.population - a.population;
+                return a.name.localeCompare(b.name);
+            });
+            const placed = [];
+            let drawn = 0;
+            for (const item of candidates) {
+                const point = map.latLngToLayerPoint([item.lat, item.lng]);
+                const box = placenameLabelBox(point, item.name, item.kind);
+                const duplicate = placed.find(existing => existing.normalizedName === item.normalizedName && placenameBoxesOverlap(existing.box, box, 14));
+                if (duplicate) continue;
+                const collision = placed.find(existing => placenameBoxesOverlap(existing.box, box, 2));
+                if (collision) continue;
+                const marker = L.marker([item.lat, item.lng], {
+                    icon: L.divIcon({ className: 'placename-anchor', html: '<div></div>', iconSize: [1, 1], iconAnchor: [0, 0] }),
+                    interactive: false,
+                    zIndexOffset: 3000
+                });
+                marker.bindTooltip(item.name, {
+                    permanent: true,
+                    direction: 'center',
+                    className: `placename-label placename-${item.kind}`
+                }).openTooltip();
+                marker.addTo(placenameCoastalLayerGroup);
+                placed.push({ normalizedName: item.normalizedName, box });
+                drawn += 1;
+                if (drawn >= 1400) break;
+            }
+        }
+        async function ensurePlacenameLayer() {
+            if (!map) return;
+            try {
+                await loadPlacenameData();
+                renderPlacenameLayers();
+            } catch (err) {
+                console.error(err);
+                toast(`Could not load placenames: ${err.message}`, 'error', 5000);
+                if (placenameCoastalLayerGroup && map.hasLayer(placenameCoastalLayerGroup)) map.removeLayer(placenameCoastalLayerGroup);
+            }
+        }
+        function getMpiOverlayConfig(target) {
+            const configs = {
+                canAreas: { label: 'CAN Boundaries', file: 'files/can_areas.geojson', color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.24, weight: 2.25 },
+                rahui: { label: 'Rāhui / Temporary Closures', file: 'files/rahui.geojson', color: '#7c3aed', fillColor: '#8b5cf6', fillOpacity: 0.28, weight: 2.5 },
+                restrictedZones: { label: 'Restricted Zones', file: 'files/restricted_zones.geojson', color: '#6b7280', fillColor: '#6b7280', fillOpacity: 0.25, weight: 2 },
+                wmpSightings: { label: 'WMP Sightings', file: 'files/WMProv_map.geojson', color: '#374151', fillColor: '#22c55e', fillOpacity: 0.85, weight: 1.5, radius: 7 },
+                inatCaulerpa: { label: 'iNaturalist Caulerpa', file: 'files/inaturalist_caulerpa.geojson', color: '#7c3aed', fillColor: '#a78bfa', fillOpacity: 0.85, weight: 1.5, radius: 6 },
+                priorityZones: { label: 'Priority Zones', file: 'files/caulerpa_priority_zones.geojson', color: '#374151', fillColor: '#6b7280', fillOpacity: 0.18, weight: 2 }
+            };
+            return configs[target] || null;
+        }
+        async function fetchMpiOverlayData(target) {
+            if (mpiOverlayCache[target]) return mpiOverlayCache[target];
+            const cfg = getMpiOverlayConfig(target);
+            if (!cfg) throw new Error('Unknown MPI overlay');
+            const response = await fetch(cfg.file);
+            if (!response.ok) throw new Error(`MPI overlay fetch failed: ${response.status}`);
+            const data = await response.json();
+            mpiOverlayCache[target] = data;
+            return data;
+        }
+        function renderMpiOverlay(target) {
+            if (!map) return;
+            const cfg = getMpiOverlayConfig(target);
+            const group = target === 'wmpSightings' ? wmpSightingsLayerGroup :
+                target === 'inatCaulerpa' ? inatCaulerpaLayerGroup :
+                target === 'priorityZones' ? priorityZonesLayerGroup :
+                target === 'rahui' ? rahuiLayerGroup :
+                target === 'restrictedZones' ? restrictedZonesLayerGroup :
+                mpiCanLayerGroup;
+            if (!cfg || !group) return;
+            group.clearLayers();
+            if (!map.hasLayer(group)) return;
+            const data = mpiOverlayCache[target];
+            if (!data?.features?.length) return;
+            let geoData = data;
+            if (target === 'restrictedZones') {
+                const rzOrder = { SPA: 0, CABLE: 1, INFRASTRUCTURE: 1, HPA: 2, RES: 3, CAN: 4 };
+                geoData = { ...data, features: data.features
+                    .filter(f => f?.properties?.overlay_type !== 'gpx_reference')
+                    .sort((a, b) => {
+                        const aLg = a?.properties?.leaflet_group;
+                        const bLg = b?.properties?.leaflet_group;
+                        const aOrd = rzOrder[aLg] ?? 1;
+                        const bOrd = rzOrder[bLg] ?? 1;
+                        if (aOrd !== bOrd) return aOrd - bOrd;
+                        const zOrder = { yellow: 0, red: 1 };
+                        return (zOrder[a?.properties?.ZoneStyle] ?? 0) - (zOrder[b?.properties?.ZoneStyle] ?? 0);
+                    }) };
+            } else if (target === 'canAreas') {
+                geoData = { ...data, features: [...data.features].sort((a, b) => {
+                    const order = { yellow: 0, red: 1 };
+                    return (order[a?.properties?.ZoneStyle] ?? 0) - (order[b?.properties?.ZoneStyle] ?? 0);
+                }) };
+            }
+            const renderer = (target === 'canAreas' || target === 'restrictedZones') ? L.svg() : L.canvas();
+            L.geoJSON(geoData, {
+                renderer,
+                pointToLayer: (feature, latlng) => {
+                    if (target === 'wmpSightings') {
+                        const raw = feature?.properties?.fields?.exotic_caulerpa_y_n_review ?? feature?.properties?.description_fields?.exotic_caulerpa_y_n_review ?? 'N';
+                        const status = String(raw).trim().toUpperCase();
+                        const colorMap = { Y: '#dc2626', S: '#f59e0b', R: '#f97316', N: '#22c55e' };
+                        return L.circleMarker(latlng, { radius: cfg.radius, color: '#374151', weight: cfg.weight, opacity: 0.95, fillColor: colorMap[status] || '#6b7280', fillOpacity: cfg.fillOpacity });
+                    }
+                    if (target === 'inatCaulerpa') {
+                        const sp = (feature?.properties?.species || '').toLowerCase();
+                        const exotic = sp.includes('brachypus') || sp.includes('parvifolia') || sp.includes('taxifolia');
+                        return L.circleMarker(latlng, { radius: cfg.radius, color: '#374151', weight: cfg.weight, opacity: 0.95, fillColor: exotic ? '#dc2626' : '#a78bfa', fillOpacity: cfg.fillOpacity });
+                    }
+                    if (cfg.radius) {
+                        return L.circleMarker(latlng, { radius: cfg.radius, color: cfg.color, weight: cfg.weight, opacity: 0.95, fillColor: cfg.fillColor, fillOpacity: cfg.fillOpacity });
+                    }
+                    return L.marker(latlng);
+                },
+                style: feature => {
+                    if (target === 'wmpSightings' || target === 'inatCaulerpa') return {};
+                    if (target === 'priorityZones') {
+                        const pri = (feature?.properties?.priority || '').toLowerCase();
+                        const pzStyles = {
+                            high: { color: '#991b1b', fillColor: '#dc2626', fillOpacity: 0.18, weight: 2.5, dashArray: '6 4' },
+                            medium: { color: '#b45309', fillColor: '#f59e0b', fillOpacity: 0.14, weight: 2, dashArray: '6 4' },
+                            low: { color: '#4b5563', fillColor: '#9ca3af', fillOpacity: 0.10, weight: 1.5, dashArray: '6 4' }
+                        };
+                        const s = pzStyles[pri] || pzStyles.low;
+                        return { color: s.color, weight: s.weight, opacity: 0.85, fillColor: s.fillColor, fillOpacity: s.fillOpacity, dashArray: s.dashArray, fillRule: 'nonzero' };
+                    }
+                    if (target === 'restrictedZones') {
+                        const p = feature?.properties || {};
+                        const lg = p.leaflet_group;
+                        const zoneStyle = p.ZoneStyle;
+                        const rzStyleMap = {
+                            HPA: { color: '#0ea5e9', fillColor: '#0ea5e9', fillOpacity: 0.30, weight: 2.5 },
+                            SPA: { color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.28, weight: 2.5 },
+                            CAN: zoneStyle === 'red' ? { color: '#991b1b', fillColor: '#dc2626', fillOpacity: 0.40, weight: 2.5 } : { color: '#b45309', fillColor: '#f59e0b', fillOpacity: 0.30, weight: 2.25 },
+                            CABLE: { color: '#f97316', fillColor: '#fb923c', fillOpacity: 0.18, weight: 2 },
+                            RES: { color: '#991b1b', fillColor: '#dc2626', fillOpacity: 0.25, weight: 2.5 },
+                            INFRASTRUCTURE: { color: '#f97316', fillColor: '#fb923c', fillOpacity: 0.18, weight: 2 }
+                        };
+                        const s = rzStyleMap[lg] || { color: '#6b7280', fillColor: '#6b7280', fillOpacity: 0.25, weight: 2 };
+                        return { color: s.color, weight: s.weight, opacity: 0.95, fillColor: s.fillColor, fillOpacity: s.fillOpacity, fillRule: 'nonzero' };
+                    }
+                    if (target === 'canAreas') {
+                        const zoneStyle = feature?.properties?.ZoneStyle;
+                        return zoneStyle === 'red'
+                            ? { color: '#991b1b', weight: 2.5, opacity: 0.98, fillColor: '#dc2626', fillOpacity: 0.40, fillRule: 'nonzero' }
+                            : { color: '#b45309', weight: 2.25, opacity: 0.96, fillColor: '#f59e0b', fillOpacity: 0.30, fillRule: 'nonzero' };
+                    }
+                    return { color: cfg.color, weight: cfg.weight, opacity: 0.95, fillColor: cfg.fillColor, fillOpacity: cfg.fillOpacity, fillRule: 'nonzero' };
+                },
+                onEachFeature: (feature, layer) => {
+                    if (target === 'priorityZones') {
+                        const p = feature?.properties || {};
+                        const zone = p.zone || 'Priority Zone';
+                        const pri = p.priority || '?';
+                        layer.bindPopup(`<div class="mpi-popup-title">${zone}</div><div style="margin-top:0.3rem;"><strong>Priority:</strong> ${pri}</div>`, { maxWidth: 320 });
+                        layer.bindTooltip(`${zone} — ${pri}`, { sticky: true });
+                        return;
+                    }
+                    if (target === 'inatCaulerpa') {
+                        const p = feature?.properties || {};
+                        const sp = p.species || 'Caulerpa';
+                        const exotic = sp.toLowerCase().includes('brachypus') || sp.toLowerCase().includes('parvifolia') || sp.toLowerCase().includes('taxifolia');
+                        const parts = [`<div class="mpi-popup-title">${sp}</div>`];
+                        if (exotic) parts.push(`<div style="margin-top:0.3rem; color:#dc2626; font-weight:700;">Exotic species</div>`);
+                        if (p.observed_on) parts.push(`<div><strong>Observed:</strong> ${p.observed_on}</div>`);
+                        if (p.place) parts.push(`<div><strong>Location:</strong> ${p.place}</div>`);
+                        if (p.url) parts.push(`<div style="margin-top:0.3rem;"><a href="${p.url}" target="_blank" rel="noopener noreferrer">View on iNaturalist</a></div>`);
+                        layer.bindPopup(parts.join(''), { maxWidth: 280 });
+                        layer.bindTooltip(`${sp}${p.observed_on ? ' — ' + p.observed_on : ''}`, { sticky: true });
+                        return;
+                    }
+                    if (target === 'wmpSightings') {
+                        const f = feature?.properties?.fields || feature?.properties?.description_fields || {};
+                        const siteId = feature?.properties?.name || '';
+                        const caulerpa = String(f.exotic_caulerpa_y_n_review || 'N').trim();
+                        const statusMap = { Y: 'Yes', S: 'Suspect', R: 'Review', N: 'No' };
+                        const statusLabel = statusMap[String(caulerpa).toUpperCase()] || caulerpa;
+                        const statusColor = { Y: '#dc2626', S: '#f59e0b', R: '#f97316', N: '#22c55e' }[String(caulerpa).toUpperCase()] || '#6b7280';
+                        layer.bindPopup(`<div class="mpi-popup-title">WMP Site ${siteId}</div><div style="margin-top:0.3rem;"><strong>Caulerpa:</strong> <span style="color:${statusColor}; font-weight:700;">${statusLabel}</span></div>`, { maxWidth: 320 });
+                        layer.bindTooltip(`Site ${siteId}`, { sticky: true });
+                        return;
+                    }
+                    const p = feature?.properties || {};
+                    const name = p.Name || p.name || cfg.label;
+                    const displayLabel = p.display_label || p.ZoneLabel || '';
+                    const popupParts = [`<div class="mpi-popup-title">${name}</div>`];
+                    if (displayLabel) popupParts.push(`<div>${displayLabel}</div>`);
+                    if (p.UpdateNote) popupParts.push(`<div style="margin-top:0.25rem; font-size:0.78rem; color:#4b5563;">${p.UpdateNote}</div>`);
+                    if (p.official_info_url) popupParts.push(`<div style="margin-top:0.3rem;"><a href="${p.official_info_url}" target="_blank" rel="noopener noreferrer">Official info</a></div>`);
+                    layer.bindPopup(popupParts.join(''), { maxWidth: 340 });
+                    layer.bindTooltip(name, { sticky: true });
+                }
+            }).addTo(group);
+        }
+        async function ensureMpiOverlay(target) {
+            if (!map) return;
+            try {
+                await fetchMpiOverlayData(target);
+                renderMpiOverlay(target);
+            } catch (err) {
+                console.error(err);
+                toast(`Could not load ${getMpiOverlayConfig(target)?.label || 'overlay'}: ${err.message}`, 'error', 6000);
+            }
+        }
+        async function fetchAndRenderCaulerpa() {
+            if (!map || !caulerpaLayerGroup || !caulerpaLayerActive) return;
+            const bounds = map.getBounds();
+            const env = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
+            const url = `https://services2.arcgis.com/geHbTEWts6uYVifz/arcgis/rest/services/PublicView_AC_Caulerpa_Community_Surveillance_/FeatureServer/0/query?where=1%3D1&outFields=Agency,Method,SiteCode,Date,TransectLength,ExoticCaulerpa,Survey&returnGeometry=true&f=geojson&geometry=${encodeURIComponent(env)}&geometryType=esriGeometryEnvelope&spatialRel=esriSpatialRelIntersects`;
+            try {
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                if (!caulerpaLayerGroup || !caulerpaLayerActive) return;
+                caulerpaLayerGroup.clearLayers();
+                const features = [...(data.features || [])].sort((a, b) => {
+                    const aPos = a.properties?.ExoticCaulerpa === 'Positive' ? 1 : 0;
+                    const bPos = b.properties?.ExoticCaulerpa === 'Positive' ? 1 : 0;
+                    return aPos - bPos;
+                });
+                L.geoJSON({ type: 'FeatureCollection', features }, {
+                    style: feature => feature.properties?.ExoticCaulerpa === 'Positive'
+                        ? { color: '#dc2626', weight: 4, opacity: 0.95 }
+                        : { color: '#16a34a', weight: 2, opacity: 0.75 },
+                    onEachFeature: (feature, layer) => {
+                        const p = feature.properties || {};
+                        const date = p.Date ? new Date(p.Date).toLocaleDateString('en-NZ', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+                        const positive = p.ExoticCaulerpa === 'Positive';
+                        const resultColour = positive ? '#dc2626' : '#16a34a';
+                        layer.bindPopup(`<div class="mpi-popup-title">${p.SiteCode || '—'}</div><div style="margin-bottom:0.3rem;"><strong style="color:${resultColour}">${p.ExoticCaulerpa || '—'}</strong></div><div><b>Survey:</b> ${p.Survey || '—'}</div><div><b>Agency:</b> ${p.Agency || '—'}</div><div><b>Method:</b> ${p.Method || '—'}</div><div><b>Date:</b> ${date}</div><div><b>Transect:</b> ${p.TransectLength != null ? p.TransectLength + ' m' : '—'}</div>`);
+                        layer.bindTooltip(p.SiteCode || 'Survey transect', { sticky: true });
+                    }
+                }).addTo(caulerpaLayerGroup);
+            } catch (err) {
+                console.error('Caulerpa fetch failed:', err);
+                toast('Could not load Caulerpa survey data: ' + err.message, 'error', 6000);
+            }
         }
         function createPopupImageFrame(src, title, onClick) {
             const frame = document.createElement('div');
@@ -3933,20 +4347,31 @@ All rights reserved. No redistribution, modification, or reuse without written p
             }
             const reader = new FileReader();
             reader.onload = e => {
-                const rawText = e.target.result;
-                gpxRawXml = lowerName.endsWith('.srt') ? convertSRTtoGPX(rawText) : rawText;
-                parseGPX(gpxRawXml);
-                const info = document.getElementById('gpxInfo');
-                info.textContent = '';
-                const fi = document.createElement('div'); fi.className = 'file-info';
-                const ic = document.createElement('div'); ic.className = 'file-icon'; ic.textContent = '📍'; fi.appendChild(ic);
-                const det = document.createElement('div'); det.className = 'file-details';
-                const fn = document.createElement('div'); fn.className = 'file-name'; fn.textContent = file.name; det.appendChild(fn);
-                const fs = document.createElement('div'); fs.className = 'file-size'; fs.textContent = formatFileSize(file.size); det.appendChild(fs);
-                fi.appendChild(det);
-                const rb = document.createElement('button'); rb.className = 'remove-btn'; rb.textContent = '×'; rb.addEventListener('click', clearGPX); fi.appendChild(rb);
-                info.appendChild(fi);
-                info.style.display = 'block'; checkReadyToView();
+                try {
+                    const rawText = e.target.result;
+                    gpxRawXml = lowerName.endsWith('.srt') ? convertSRTtoGPX(rawText) : rawText;
+                    parseGPX(gpxRawXml);
+                    const info = document.getElementById('gpxInfo');
+                    info.textContent = '';
+                    const fi = document.createElement('div'); fi.className = 'file-info';
+                    const ic = document.createElement('div'); ic.className = 'file-icon'; ic.textContent = '📍'; fi.appendChild(ic);
+                    const det = document.createElement('div'); det.className = 'file-details';
+                    const fn = document.createElement('div'); fn.className = 'file-name'; fn.textContent = file.name; det.appendChild(fn);
+                    const fs = document.createElement('div'); fs.className = 'file-size'; fs.textContent = formatFileSize(file.size); det.appendChild(fs);
+                    fi.appendChild(det);
+                    const rb = document.createElement('button'); rb.className = 'remove-btn'; rb.textContent = '×'; rb.addEventListener('click', clearGPX); fi.appendChild(rb);
+                    info.appendChild(fi);
+                    info.style.display = 'block';
+                    checkReadyToView();
+                } catch (err) {
+                    console.error(err);
+                    alert('Error loading GPX/SRT: ' + (err?.message || err));
+                }
+            };
+            reader.onerror = () => {
+                const err = reader.error?.message || 'Could not read the selected file.';
+                console.error(reader.error || err);
+                alert('Error loading GPX/SRT: ' + err);
             };
             reader.readAsText(file);
         }
@@ -4081,8 +4506,8 @@ ${trkpts.join('\n')}
 </gpx>`;
         }
         function parseGPX(gpxText) {
-            sightingMarkers.forEach(m => { if (m && map) map.removeLayer(m); });
-            sightings = []; sightingMarkers = []; sightingCounter = 1;
+            clearSightingMarkersFromMap();
+            sightings = []; sightingCounter = 1;
             transectMarkers.forEach(m => { if (m && map) map.removeLayer(m); });
             transects = []; transectMarkers = []; transectDraft = null;
             gpsMission = { waypoints: [] };
@@ -4094,6 +4519,10 @@ ${trkpts.join('\n')}
             if (boundaryLine && map) { map.removeLayer(boundaryLine); boundaryLine = null; }
             if (loadImagesBtnTop) loadImagesBtnTop.style.display = 'inline-flex';
             const doc = new DOMParser().parseFromString(gpxText, 'text/xml');
+            const parserError = doc.getElementsByTagName('parsererror')[0];
+            if (parserError) {
+                throw new Error('Invalid GPX/XML file.');
+            }
 
             // Parse survey metadata (name + desc tokens)
             const meta = doc.getElementsByTagName('metadata')[0];
@@ -4142,6 +4571,9 @@ ${trkpts.join('\n')}
                 }
             }
             gpxData.sort((a,b) => a.timestamp - b.timestamp);
+            if (!gpxData.length) {
+                throw new Error('No track points with timestamps were found in the GPX.');
+            }
             if (transects.length && gpxData.length) {
                 transects = transects.map(t => {
                     const si = Math.min(Math.max(0, t.startIdx ?? 0), gpxData.length-1);
@@ -4337,12 +4769,44 @@ ${trkpts.join('\n')}
             boundaryLabelMarkers = [];
             rulerLine = null; rulerArrow = null; rulerMarkers = []; measureStart = null; measurePending = false;
             overlayTrackLayerGroup = null;
+            placenameCoastalLayerGroup = null;
+            mpiCanLayerGroup = null;
+            rahuiLayerGroup = null;
+            restrictedZonesLayerGroup = null;
+            wmpSightingsLayerGroup = null;
+            inatCaulerpaLayerGroup = null;
+            priorityZonesLayerGroup = null;
+            caulerpaLayerGroup = null;
+            caulerpaLayerActive = false;
             map = L.map('map').setView([gpxData[0].lat, gpxData[0].lon], 15);
             map.on('movestart', () => { if (!isProgrammaticPan) lastUserPanAt = Date.now(); });
             const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
             const linz = L.tileLayer('https://basemaps.linz.govt.nz/v1/tiles/aerial/WebMercatorQuad/{z}/{x}/{y}.webp?api=d01ev80nbc3tv6v3hc552g70whg', { attribution: '<a href="https://www.linz.govt.nz">LINZ</a>', maxZoom: 21, minZoom: 1, opacity: 1 }).addTo(map);
             const sea = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', { attribution: '<a href="http://www.openseamap.org">OpenSeaMap</a>', maxZoom: 18, opacity: 0.8 }).addTo(map);
-            L.control.layers({"OpenStreetMap":osm},{"LINZ Aerial (NZ)":linz,"Nautical Chart":sea},{position:'bottomright',collapsed:true}).addTo(map);
+            placenameCoastalLayerGroup = L.layerGroup();
+            mpiCanLayerGroup = L.layerGroup();
+            rahuiLayerGroup = L.layerGroup();
+            restrictedZonesLayerGroup = L.layerGroup();
+            wmpSightingsLayerGroup = L.layerGroup();
+            inatCaulerpaLayerGroup = L.layerGroup();
+            priorityZonesLayerGroup = L.layerGroup();
+            caulerpaLayerGroup = L.layerGroup();
+            L.control.layers(
+                { "OpenStreetMap": osm },
+                {
+                    "LINZ Aerial (NZ)": linz,
+                    "Nautical Chart": sea,
+                    "Coastal Names": placenameCoastalLayerGroup,
+                    "Restricted Zones": restrictedZonesLayerGroup,
+                    "Priority Zones": priorityZonesLayerGroup,
+                    "CAN Boundaries": mpiCanLayerGroup,
+                    "Rāhui / Closures": rahuiLayerGroup,
+                    "WMP Sightings": wmpSightingsLayerGroup,
+                    "iNaturalist Caulerpa": inatCaulerpaLayerGroup,
+                    "Community Sightings": caulerpaLayerGroup
+                },
+                { position:'bottomright', collapsed:true }
+            ).addTo(map);
             trackLine = L.polyline(gpxData.map(p=>[p.lat,p.lon]),{color:'#00d9ff',weight:3,opacity:0.6}).addTo(map);
             // layers for user waypoints/boundary
             if (boundaryLine) { map.removeLayer(boundaryLine); boundaryLine = null; }
@@ -4356,6 +4820,7 @@ ${trkpts.join('\n')}
             map.fitBounds(trackLine.getBounds()); updateStats(gpxData[0], gpxData[1]);
             renderTransects();
             updateSyncIndicators();
+            map.on('zoomend', refreshSightingMarkerLabels);
             refreshBoundary();
             rebuildBoundaryDots();
             updateBoundaryAreaDisplay();
@@ -4421,7 +4886,42 @@ ${trkpts.join('\n')}
                 ctxOnCursor = false;
                 showContextMenu(evt.originalEvent.clientX, evt.originalEvent.clientY);
             });
+            map.on('mousedown', e => {
+                if (!routeLegBoxSelectMode || routeDrawing || boundaryDrawing || measurePending || boundaryAreaMoveActive || boundaryCircleArmed || boundaryCircleDragging) return;
+                const original = e.originalEvent;
+                if (original?.button != null && original.button !== 0) return;
+                routeLegBoxSelecting = true;
+                routeLegBoxStartPoint = map.mouseEventToContainerPoint(original);
+                updateRouteLegBoxOverlay(routeLegBoxStartPoint, routeLegBoxStartPoint);
+                L.DomEvent.stopPropagation(e);
+                L.DomEvent.preventDefault(original);
+            });
+            map.on('mousemove', e => {
+                if (!routeLegBoxSelecting || !routeLegBoxStartPoint) return;
+                const current = map.mouseEventToContainerPoint(e.originalEvent);
+                updateRouteLegBoxOverlay(routeLegBoxStartPoint, current);
+            });
+            map.on('mouseup', e => {
+                if (!routeLegBoxSelecting || !routeLegBoxStartPoint) return;
+                const endPoint = map.mouseEventToContainerPoint(e.originalEvent);
+                const startLatLng = map.containerPointToLatLng(routeLegBoxStartPoint);
+                const endLatLng = map.containerPointToLatLng(endPoint);
+                const bounds = L.latLngBounds([startLatLng, endLatLng]);
+                const append = !!(e.originalEvent && (e.originalEvent.ctrlKey || e.originalEvent.metaKey));
+                const legs = getRouteLegsInBounds(bounds);
+                setRouteLegSelectionFromArray(legs, append);
+                routeLegBoxSelecting = false;
+                routeLegBoxStartPoint = null;
+                routeLegBoxIgnoreClickUntil = performance.now() + 250;
+                hideRouteLegBoxOverlay();
+                renderRouteSelectionOverlay();
+                renderRouteLegLabels(gpsMission.waypoints, startWholeRouteDrag);
+                renderGpsMissionWaypoints();
+                if (!append) toggleRouteLegBoxSelectMode(false);
+            });
             map.on('click', (e) => {
+                if (routeLegBoxSelecting) return;
+                if (routeLegBoxIgnoreClickUntil > performance.now()) return;
                 if (routeDrawing || boundaryDrawing || measurePending || boundaryAreaMoveActive || boundaryCircleArmed || boundaryCircleDragging) return;
                 if (!routeSelectedWaypointIds.size && !routeSelectedLegIdxs.size) return;
                 if (ctxMenu && ctxMenu.style.display === 'flex') return;
@@ -4471,6 +4971,36 @@ ${trkpts.join('\n')}
                     return;
                 }
                 if (boundaryAreaMoveActive) finishBoundaryAreaMove();
+            });
+            map.on('overlayadd', async e => {
+                if (e.layer === placenameCoastalLayerGroup) await ensurePlacenameLayer();
+                if (e.layer === mpiCanLayerGroup) await ensureMpiOverlay('canAreas');
+                if (e.layer === rahuiLayerGroup) await ensureMpiOverlay('rahui');
+                if (e.layer === restrictedZonesLayerGroup) await ensureMpiOverlay('restrictedZones');
+                if (e.layer === wmpSightingsLayerGroup) await ensureMpiOverlay('wmpSightings');
+                if (e.layer === inatCaulerpaLayerGroup) await ensureMpiOverlay('inatCaulerpa');
+                if (e.layer === priorityZonesLayerGroup) await ensureMpiOverlay('priorityZones');
+                if (e.layer === caulerpaLayerGroup) {
+                    caulerpaLayerActive = true;
+                    await fetchAndRenderCaulerpa();
+                }
+            });
+            map.on('overlayremove', e => {
+                if (e.layer === placenameCoastalLayerGroup && placenameCoastalLayerGroup) placenameCoastalLayerGroup.clearLayers();
+                if (e.layer === mpiCanLayerGroup && mpiCanLayerGroup) mpiCanLayerGroup.clearLayers();
+                if (e.layer === rahuiLayerGroup && rahuiLayerGroup) rahuiLayerGroup.clearLayers();
+                if (e.layer === restrictedZonesLayerGroup && restrictedZonesLayerGroup) restrictedZonesLayerGroup.clearLayers();
+                if (e.layer === wmpSightingsLayerGroup && wmpSightingsLayerGroup) wmpSightingsLayerGroup.clearLayers();
+                if (e.layer === inatCaulerpaLayerGroup && inatCaulerpaLayerGroup) inatCaulerpaLayerGroup.clearLayers();
+                if (e.layer === priorityZonesLayerGroup && priorityZonesLayerGroup) priorityZonesLayerGroup.clearLayers();
+                if (e.layer === caulerpaLayerGroup) {
+                    caulerpaLayerActive = false;
+                    caulerpaLayerGroup.clearLayers();
+                }
+            });
+            map.on('zoomend moveend', async () => {
+                if (placenameCoastalLayerGroup) renderPlacenameLayers();
+                if (caulerpaLayerActive) await fetchAndRenderCaulerpa();
             });
             if (!_docListenersBound) {
                 _docListenersBound = true;
@@ -5110,9 +5640,26 @@ ${trkpts.join('\n')}
 
         function addSightingToMap(s) {
             const icon = createSurveySightingMarkerIcon(s);
-            const m = L.marker([s.lat,s.lon],{icon}).addTo(map);
+            const m = L.marker([s.lat,s.lon],{icon, zIndexOffset: getSightingMarkerZIndex(s.id)}).addTo(map);
+            m.on('contextmenu', e => {
+                L.DomEvent.preventDefault(e);
+                L.DomEvent.stopPropagation(e);
+                ctxLatLng = e.latlng;
+                ctxWaypointId = null;
+                ctxGpsWaypointId = null;
+                ctxRouteLegIdx = null;
+                ctxOnRouteLeg = false;
+                ctxBoundaryLabelIdx = null;
+                ctxBoundarySegIdx = null;
+                ctxOnRuler = false;
+                ctxOnTrack = false;
+                ctxOnCursor = false;
+                const { clientX, clientY } = getEventClientPoint(e);
+                showContextMenu(clientX, clientY);
+            });
             m.bindPopup(() => {
                 const el = document.createElement('div');
+                el.style.width = '280px';
                 const nameEl = document.createElement('strong'); nameEl.textContent = s.name; el.appendChild(nameEl);
                 el.appendChild(document.createElement('br'));
                 el.appendChild(document.createTextNode(new Date(s.timestamp).toLocaleTimeString('en-NZ')));
@@ -5123,10 +5670,12 @@ ${trkpts.join('\n')}
                 if (s.image) {
                     const src = loadedImages[s.image];
                     if (src) {
-                        el.appendChild(document.createElement('br')); el.appendChild(document.createElement('br'));
-                        const img = document.createElement('img'); img.src = src; img.style.cssText = 'max-width:200px;max-height:150px;border-radius:4px;cursor:pointer;object-fit:cover;';
-                        img.addEventListener('click', () => openLightbox(src, s.name, s.notes||'', s.lat, s.lon, s.id));
-                        el.appendChild(img);
+                        el.appendChild(document.createElement('br'));
+                        el.appendChild(createPopupImageFrame(
+                            src,
+                            s.image,
+                            () => openLightbox(src, s.name, s.notes||'', s.lat, s.lon, s.id)
+                        ));
                     } else {
                         el.appendChild(document.createElement('br'));
                         const hint = document.createElement('div'); hint.style.cssText = 'color:#6c757d;font-size:0.75rem;margin-top:0.5rem;';
@@ -5137,8 +5686,18 @@ ${trkpts.join('\n')}
                     }
                 }
                 return el;
-            });
+            }, { minWidth: 300, maxWidth: 320 });
             sightingMarkers.push({id:s.id, marker:m});
+        }
+
+        function refreshSightingMarkerLabels() {
+            if (!Array.isArray(sightingMarkers) || !sightingMarkers.length) return;
+            sightingMarkers.forEach(sm => {
+                if (sm?.marker) {
+                    sm.marker.setIcon(createSurveySightingMarkerIcon({ id: sm.id }));
+                    sm.marker.setZIndexOffset(getSightingMarkerZIndex(sm.id));
+                }
+            });
         }
 
         function syncSightingMarkersToSightings() {
@@ -5149,6 +5708,18 @@ ${trkpts.join('\n')}
                 if (!keep && sm.marker && map) map.removeLayer(sm.marker);
                 return keep;
             });
+            refreshSightingMarkerLabels();
+        }
+
+        function clearSightingMarkersFromMap() {
+            if (!Array.isArray(sightingMarkers) || !sightingMarkers.length) {
+                sightingMarkers = [];
+                return;
+            }
+            sightingMarkers.forEach(sm => {
+                if (sm?.marker && map) map.removeLayer(sm.marker);
+            });
+            sightingMarkers = [];
         }
 
         // ============================================================================
@@ -5321,6 +5892,7 @@ ${trkpts.join('\n')}
                 routeSelectedWaypointIds = new Set();
                 routeSelectedLegIdxs = new Set();
                 routeSelectionAnchorWaypointId = null;
+                routeSelectionAnchorLegIdx = null;
                 return;
             }
             const validIds = new Set(gpsMission.waypoints.map(w => w.id));
@@ -5329,6 +5901,7 @@ ${trkpts.join('\n')}
                 [...routeSelectedLegIdxs].filter(idx => Number.isInteger(idx) && idx >= 0 && idx < gpsMission.waypoints.length - 1)
             );
             if (routeSelectionAnchorWaypointId && !validIds.has(routeSelectionAnchorWaypointId)) routeSelectionAnchorWaypointId = null;
+            if (!Number.isInteger(routeSelectionAnchorLegIdx) || routeSelectionAnchorLegIdx < 0 || routeSelectionAnchorLegIdx >= gpsMission.waypoints.length - 1) routeSelectionAnchorLegIdx = null;
         }
         function setRouteSelectionSingle(waypointId) {
             pruneRouteSelection();
@@ -5340,6 +5913,7 @@ ${trkpts.join('\n')}
             } else {
                 routeSelectionAnchorWaypointId = null;
             }
+            routeSelectionAnchorLegIdx = null;
         }
         function setRouteSelectionRange(anchorId, endId) {
             const aIdx = routeWaypointIndexById(anchorId);
@@ -5354,6 +5928,56 @@ ${trkpts.join('\n')}
             routeSelectedLegIdxs = new Set();
             for (let i = lo; i < hi; i++) routeSelectedLegIdxs.add(i);
             routeSelectionAnchorWaypointId = anchorId;
+            routeSelectionAnchorLegIdx = lo < hi ? lo : null;
+        }
+        function setRouteLegSelectionSingle(legIdx) {
+            pruneRouteSelection();
+            routeSelectedWaypointIds = new Set();
+            routeSelectedLegIdxs = new Set();
+            if (Number.isInteger(legIdx) && legIdx >= 0 && legIdx < (gpsMission?.waypoints?.length || 0) - 1) {
+                routeSelectedLegIdxs.add(legIdx);
+                routeSelectionAnchorLegIdx = legIdx;
+            } else {
+                routeSelectionAnchorLegIdx = null;
+            }
+            routeSelectionAnchorWaypointId = null;
+        }
+        function setRouteLegSelectionRange(anchorLegIdx, endLegIdx) {
+            pruneRouteSelection();
+            if (!Number.isInteger(anchorLegIdx) || !Number.isInteger(endLegIdx)) {
+                setRouteLegSelectionSingle(endLegIdx);
+                return;
+            }
+            const maxLegIdx = (gpsMission?.waypoints?.length || 0) - 2;
+            if (anchorLegIdx < 0 || endLegIdx < 0 || anchorLegIdx > maxLegIdx || endLegIdx > maxLegIdx) {
+                setRouteLegSelectionSingle(endLegIdx);
+                return;
+            }
+            const lo = Math.min(anchorLegIdx, endLegIdx);
+            const hi = Math.max(anchorLegIdx, endLegIdx);
+            routeSelectedWaypointIds = new Set();
+            routeSelectedLegIdxs = new Set();
+            for (let i = lo; i <= hi; i++) routeSelectedLegIdxs.add(i);
+            routeSelectionAnchorLegIdx = anchorLegIdx;
+            routeSelectionAnchorWaypointId = null;
+        }
+        function toggleRouteLegSelection(legIdx) {
+            pruneRouteSelection();
+            if (!Number.isInteger(legIdx) || legIdx < 0 || legIdx >= (gpsMission?.waypoints?.length || 0) - 1) return;
+            routeSelectedWaypointIds = new Set();
+            if (routeSelectedLegIdxs.has(legIdx)) routeSelectedLegIdxs.delete(legIdx);
+            else routeSelectedLegIdxs.add(legIdx);
+            routeSelectionAnchorLegIdx = legIdx;
+            routeSelectionAnchorWaypointId = null;
+        }
+        function setRouteLegSelectionFromArray(legIdxs, append = false) {
+            pruneRouteSelection();
+            const valid = (Array.isArray(legIdxs) ? legIdxs : []).filter(idx => Number.isInteger(idx) && idx >= 0 && idx < (gpsMission?.waypoints?.length || 0) - 1);
+            routeSelectedWaypointIds = new Set();
+            routeSelectedLegIdxs = append ? new Set(routeSelectedLegIdxs) : new Set();
+            valid.forEach(idx => routeSelectedLegIdxs.add(idx));
+            routeSelectionAnchorWaypointId = null;
+            routeSelectionAnchorLegIdx = valid.length ? valid[valid.length - 1] : routeSelectionAnchorLegIdx;
         }
         function selectWholeRoute() {
             if (!Array.isArray(gpsMission?.waypoints) || !gpsMission.waypoints.length) {
@@ -5364,11 +5988,13 @@ ${trkpts.join('\n')}
             routeSelectedLegIdxs = new Set();
             for (let i = 0; i < gpsMission.waypoints.length - 1; i++) routeSelectedLegIdxs.add(i);
             routeSelectionAnchorWaypointId = gpsMission.waypoints[0]?.id || null;
+            routeSelectionAnchorLegIdx = gpsMission.waypoints.length > 1 ? 0 : null;
         }
         function clearRouteSelection() {
             routeSelectedWaypointIds = new Set();
             routeSelectedLegIdxs = new Set();
             routeSelectionAnchorWaypointId = null;
+            routeSelectionAnchorLegIdx = null;
         }
         function isWholeRouteSelected() {
             if (!Array.isArray(gpsMission?.waypoints) || gpsMission.waypoints.length < 2) return false;
@@ -5398,12 +6024,28 @@ ${trkpts.join('\n')}
             const legs = getSelectedLegIdxsOrdered();
             return legs.length ? legs : null;
         }
+        function updateRouteSelectionUi() {
+            const selectedLegs = getSelectedLegIdxsOrdered();
+            if (btnEditSelectedRouteLegs) btnEditSelectedRouteLegs.disabled = !selectedLegs.length;
+            if (btnRouteBoxSelect) {
+                btnRouteBoxSelect.classList.toggle('btn-green', routeLegBoxSelectMode);
+                btnRouteBoxSelect.classList.toggle('btn-secondary', !routeLegBoxSelectMode);
+                btnRouteBoxSelect.textContent = routeLegBoxSelectMode ? 'Box Select On' : 'Box Select Legs';
+            }
+            if (routeSelectionStatus) {
+                if (routeLegBoxSelectMode) routeSelectionStatus.textContent = 'Drag a box on the map to select route legs. Hold Ctrl/Cmd while boxing to add to the current selection.';
+                else if (selectedLegs.length > 1) routeSelectionStatus.textContent = `${selectedLegs.length} route legs selected. Click "Edit Selected Legs" to bulk update them.`;
+                else if (selectedLegs.length === 1) routeSelectionStatus.textContent = `Leg ${selectedLegs[0] + 1} selected. Ctrl/Cmd-click adds legs, Shift-click selects a range.`;
+                else routeSelectionStatus.textContent = 'Click a route leg label to select one leg. Ctrl/Cmd-click adds, Shift-click selects a range.';
+            }
+        }
         function renderRouteSelectionOverlay(routePoints = gpsMission?.waypoints) {
             if (!map) return;
             if (routeSelectionOverlayLayer) {
                 map.removeLayer(routeSelectionOverlayLayer);
                 routeSelectionOverlayLayer = null;
             }
+            updateRouteSelectionUi();
             if (!Array.isArray(routePoints) || routePoints.length < 2 || !routeSelectedLegIdxs.size) return;
             routeSelectionOverlayLayer = L.layerGroup().addTo(map);
             getSelectedLegIdxsOrdered().forEach(i => {
@@ -5481,6 +6123,8 @@ ${trkpts.join('\n')}
                 const pauseSuffix = timing.pauseSec > 0 ? ` (+${formatDurationShort(timing.pauseSec)} pause)` : '';
                 const row = document.createElement('div');
                 row.className = 'route-leg-row';
+                if (routeSelectedLegIdxs.has(idx)) row.classList.add('selected');
+                row.dataset.legIdx = String(idx);
                 const baseLegLabel = `Leg ${idx + 1}`;
                 const namedLegLabel = legName ? `${baseLegLabel} (${escapeXml(legName)})` : baseLegLabel;
                 row.innerHTML = `<span class="leg-name">${namedLegLabel} • ${movementModeLabel(mode)}</span><span>${formatDistanceShort(distM)} • ${brg.toFixed(1)}° • ETA ${formatDurationShort(timing.totalSec)}${pauseSuffix}</span>`;
@@ -5599,9 +6243,10 @@ ${trkpts.join('\n')}
                 const distLabel = formatDistanceShort(distM);
                 const label = legName ? `${escapeXml(legName)} • ${distLabel}` : distLabel;
                 const mid = [(a.lat + b.lat) / 2, (a.lon + b.lon) / 2];
+                const selectedClass = routeSelectedLegIdxs.has(i) ? ' selected' : '';
                 const icon = L.divIcon({
                     className: 'route-leg-label-icon',
-                    html: `<div class="route-leg-label-text">${label}</div>`
+                    html: `<div class="route-leg-label-text${selectedClass}">${label}</div>`
                 });
                 const labelMarker = L.marker(mid, { icon, interactive: true, keyboard: false, zIndexOffset: 2000 }).addTo(routeLegLabelLayer);
                 labelMarker.on('mouseover', () => {
@@ -5630,15 +6275,90 @@ ${trkpts.join('\n')}
                     const clientY = e.originalEvent?.clientY || e.domEvent?.clientY || 0;
                     showContextMenu(clientX, clientY);
                 });
-                labelMarker.on('mousedown', (e) => {
-                    if (typeof onRouteDragStart !== 'function') return;
+                labelMarker.on('click', (e) => {
                     if (!e?.latlng) return;
                     L.DomEvent.stopPropagation(e);
-                    selectWholeRoute();
+                    const original = e.originalEvent || e.domEvent;
+                    const isToggle = !!(original && (original.ctrlKey || original.metaKey));
+                    const isRange = !!(original && original.shiftKey);
+                    if (isRange && Number.isInteger(routeSelectionAnchorLegIdx)) setRouteLegSelectionRange(routeSelectionAnchorLegIdx, i);
+                    else if (isToggle) toggleRouteLegSelection(i);
+                    else setRouteLegSelectionSingle(i);
                     renderRouteSelectionOverlay(routePoints);
-                    onRouteDragStart(e.latlng);
+                    renderRouteLegLabels(routePoints, onRouteDragStart);
+                    renderGpsMissionWaypoints();
                 });
             }
+        }
+        function ensureRouteLegBoxOverlay() {
+            if (!map) return null;
+            const container = map.getContainer();
+            if (routeLegBoxOverlayEl && routeLegBoxOverlayEl.parentElement === container) return routeLegBoxOverlayEl;
+            if (routeLegBoxOverlayEl?.parentElement) routeLegBoxOverlayEl.parentElement.removeChild(routeLegBoxOverlayEl);
+            routeLegBoxOverlayEl = document.createElement('div');
+            routeLegBoxOverlayEl.className = 'route-leg-box-select';
+            routeLegBoxOverlayEl.style.display = 'none';
+            container.appendChild(routeLegBoxOverlayEl);
+            return routeLegBoxOverlayEl;
+        }
+        function hideRouteLegBoxOverlay() {
+            if (routeLegBoxOverlayEl) routeLegBoxOverlayEl.style.display = 'none';
+        }
+        function updateRouteLegBoxOverlay(startPoint, endPoint) {
+            const overlay = ensureRouteLegBoxOverlay();
+            if (!overlay || !startPoint || !endPoint) return;
+            const left = Math.min(startPoint.x, endPoint.x);
+            const top = Math.min(startPoint.y, endPoint.y);
+            const width = Math.abs(endPoint.x - startPoint.x);
+            const height = Math.abs(endPoint.y - startPoint.y);
+            overlay.style.display = 'block';
+            overlay.style.left = `${left}px`;
+            overlay.style.top = `${top}px`;
+            overlay.style.width = `${width}px`;
+            overlay.style.height = `${height}px`;
+        }
+        function getRouteLegsInBounds(bounds) {
+            if (!bounds || !Array.isArray(gpsMission?.waypoints) || gpsMission.waypoints.length < 2) return [];
+            const selected = [];
+            const bboxPoly = window.turf ? turf.bboxPolygon([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]) : null;
+            for (let i = 0; i < gpsMission.waypoints.length - 1; i++) {
+                const a = gpsMission.waypoints[i];
+                const b = gpsMission.waypoints[i + 1];
+                if (!a || !b) continue;
+                const mid = L.latLng((a.lat + b.lat) / 2, (a.lon + b.lon) / 2);
+                const endpointHit = bounds.contains([a.lat, a.lon]) || bounds.contains([b.lat, b.lon]) || bounds.contains(mid);
+                if (endpointHit) {
+                    selected.push(i);
+                    continue;
+                }
+                if (bboxPoly && window.turf) {
+                    const line = turf.lineString([[a.lon, a.lat], [b.lon, b.lat]]);
+                    const intersects = turf.lineIntersect(line, bboxPoly);
+                    if (intersects?.features?.length) selected.push(i);
+                }
+            }
+            return selected;
+        }
+        function handleRouteLegSelectionInteraction(legIdx, originalEvent = null) {
+            const isToggle = !!(originalEvent && (originalEvent.ctrlKey || originalEvent.metaKey));
+            const isRange = !!(originalEvent && originalEvent.shiftKey);
+            if (isRange && Number.isInteger(routeSelectionAnchorLegIdx)) setRouteLegSelectionRange(routeSelectionAnchorLegIdx, legIdx);
+            else if (isToggle) toggleRouteLegSelection(legIdx);
+            else setRouteLegSelectionSingle(legIdx);
+            renderRouteSelectionOverlay();
+            renderRouteLegLabels(gpsMission.waypoints, startWholeRouteDrag);
+            renderGpsMissionWaypoints();
+        }
+        function toggleRouteLegBoxSelectMode(force = null) {
+            routeLegBoxSelectMode = typeof force === 'boolean' ? force : !routeLegBoxSelectMode;
+            routeLegBoxSelecting = false;
+            routeLegBoxStartPoint = null;
+            hideRouteLegBoxOverlay();
+            if (map?.dragging && !gpsRouteDragActive) {
+                if (routeLegBoxSelectMode) map.dragging.disable();
+                else map.dragging.enable();
+            }
+            updateRouteSelectionUi();
         }
         function applyGpsMissionPreview(candidate) {
             candidate.forEach((pt, pIdx) => {
@@ -5727,10 +6447,9 @@ ${trkpts.join('\n')}
             transectRouteHitLayer.on('click', (e) => {
                 if (routeDrawing || boundaryDrawing || measurePending || gpsRouteDragActive) return;
                 L.DomEvent.stopPropagation(e);
-                if (!routeSelectedWaypointIds.size && !routeSelectedLegIdxs.size) return;
-                clearRouteSelection();
-                renderGpsMissionWaypoints();
-                renderGpsMissionRouteLine();
+                const legIdx = findNearestGpsLegIndex(e.latlng, ROUTE_CONTEXT_ATTACH_KM);
+                if (legIdx < 0) return;
+                handleRouteLegSelectionInteraction(legIdx, e.originalEvent || e.domEvent || e);
             });
             if (map._gpsRouteMoveHandler) map.off('mousemove', map._gpsRouteMoveHandler);
             if (map._gpsRouteUpHandler) map.off('mouseup', map._gpsRouteUpHandler);
@@ -6239,6 +6958,7 @@ ${trkpts.join('\n')}
             gpsRouteDragSnapshot = null;
             gpsRouteDragPreviewRoute = null;
             gpsRouteDragLastPreviewTs = 0;
+            toggleRouteLegBoxSelectMode(false);
             if (map?.dragging) map.dragging.enable();
             recalcGridRouteMetrics();
             renderTransectGridPlan();
@@ -6528,6 +7248,24 @@ ${trkpts.join('\n')}
                         const a = metersOffsetFromAnchor(anchorWp, 0, y, heading);
                         const b = metersOffsetFromAnchor(anchorWp, widthM, y, heading);
                         const seg = generateLinePoints(a, b, waypointSpacingM);
+                        if (seg.length) seg.shift();
+                        pts.push(...seg);
+                    }
+                }
+            } else if (pattern === 'sawtooth') {
+                // Anchor is top-left. Each tooth runs vertically down, then diagonally back to the next top point.
+                const passes = Math.max(2, Math.floor(widthM / legSpacingM) + 1);
+                for (let p = 0; p < passes; p++) {
+                    const x = (p / (passes - 1)) * widthM;
+                    const top = metersOffsetFromAnchor(anchorWp, x, 0, heading);
+                    const bottom = metersOffsetFromAnchor(anchorWp, x, -heightM, heading);
+                    if (p === 0) pts.push(top);
+                    let seg = generateLinePoints(top, bottom, waypointSpacingM);
+                    if (seg.length && pts.length) seg.shift();
+                    pts.push(...seg);
+                    if (p < passes - 1) {
+                        const nextTop = metersOffsetFromAnchor(anchorWp, ((p + 1) / (passes - 1)) * widthM, 0, heading);
+                        seg = generateLinePoints(bottom, nextTop, waypointSpacingM);
                         if (seg.length) seg.shift();
                         pts.push(...seg);
                     }
@@ -6827,8 +7565,8 @@ ${trkpts.join('\n')}
             const pattern = (routePatternType?.value || 'lawnmower').toLowerCase();
             const showRadius = pattern === 'spiral';
             const showTurns = pattern === 'spiral';
-            const showRect = pattern === 'lawnmower';
-            const showLegSpacing = pattern === 'lawnmower';
+            const showRect = pattern === 'lawnmower' || pattern === 'sawtooth';
+            const showLegSpacing = pattern === 'lawnmower' || pattern === 'sawtooth';
             const showHeading = true;
             if (routePatternRadiusM) routePatternRadiusM.closest('.survey-field').style.display = showRadius ? '' : 'none';
             if (routePatternLegSpacingM) routePatternLegSpacingM.closest('.survey-field').style.display = showLegSpacing ? '' : 'none';
@@ -8075,17 +8813,40 @@ ${trkpts.join('\n')}
         });
         if (btnGenerateTransectGrid) btnGenerateTransectGrid.addEventListener('click', generateTransectGridPlan);
         if (btnClearTransectGrid) btnClearTransectGrid.addEventListener('click', clearTransectGridPlan);
+        if (btnRouteBoxSelect) btnRouteBoxSelect.addEventListener('click', () => toggleRouteLegBoxSelectMode());
+        if (btnEditSelectedRouteLegs) btnEditSelectedRouteLegs.addEventListener('click', () => {
+            const legIdxs = getSelectedLegIdxsOrdered();
+            if (!legIdxs.length) return;
+            openRoutePropertiesModal({ type: legIdxs.length > 1 ? 'leg-bulk' : 'leg', legIdx: legIdxs[0], legIdxs });
+        });
         if (routePatternApplyBtn) routePatternApplyBtn.addEventListener('click', applyRoutePatternFromModal);
         if (routePatternCancelBtn) routePatternCancelBtn.addEventListener('click', closeRoutePatternModal);
         if (routePatternType) routePatternType.addEventListener('change', () => {
             const p = (routePatternType.value || '').toLowerCase();
-            if (p === 'lawnmower') applyLawnmowerDefaults();
+            if (p === 'lawnmower' || p === 'sawtooth') applyLawnmowerDefaults();
             updateRoutePatternForm();
         });
         if (routePatternModal) routePatternModal.addEventListener('click', (e) => { if (e.target === routePatternModal) closeRoutePatternModal(); });
         if (routePropsSaveBtn) routePropsSaveBtn.addEventListener('click', saveRoutePropertiesModal);
         if (routePropsCancelBtn) routePropsCancelBtn.addEventListener('click', closeRoutePropertiesModal);
         if (routePropertiesModal) routePropertiesModal.addEventListener('click', (e) => { if (e.target === routePropertiesModal) closeRoutePropertiesModal(); });
+        if (routeLegList) routeLegList.addEventListener('click', (e) => {
+            const row = e.target.closest('.route-leg-row');
+            if (!row) return;
+            const legIdx = Number(row.dataset.legIdx);
+            if (!Number.isInteger(legIdx)) return;
+            handleRouteLegSelectionInteraction(legIdx, e);
+        });
+        if (routeLegList) routeLegList.addEventListener('dblclick', (e) => {
+            const row = e.target.closest('.route-leg-row');
+            if (!row) return;
+            const legIdx = Number(row.dataset.legIdx);
+            if (!Number.isInteger(legIdx)) return;
+            const selected = getSelectedLegIdxsOrdered();
+            const useBulk = selected.length > 1 && selected.includes(legIdx);
+            openRoutePropertiesModal({ type: useBulk ? 'leg-bulk' : 'leg', legIdx, legIdxs: selected });
+        });
+        updateRouteSelectionUi();
         document.addEventListener('keydown', (e) => {
             const targetTag = (e.target?.tagName || '').toUpperCase();
             const isEditableTarget = targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT' || e.target?.isContentEditable;
@@ -8752,7 +9513,9 @@ ${trkpts.join('\n')}
             uploadSection.style.display='grid'; viewerSection.classList.remove('active','map-only');
             clearVideo(); clearGPX();
             isSynced=false; syncBtn.textContent='Sync Files';
-            sightings=[]; sightingMarkers=[]; sightingCounter=1;
+            toggleRouteLegBoxSelectMode(false);
+            clearSightingMarkersFromMap();
+            sightings=[]; sightingCounter=1;
             overlayTracks=[]; overlayTrackLayerGroup=null;
             transects=[]; transectMarkers=[]; transectDraft=null;
             waypoints=[]; waypointMarkers=[]; boundaryPoints=[]; boundaryNames=[]; boundaryLine=null;
