@@ -616,6 +616,24 @@ All rights reserved. No redistribution, modification, or reuse without written p
         .modal-preview { display: flex; gap: 1rem; margin-bottom: 1rem; }
         .modal-preview img { width: 160px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
         .modal-preview-info { flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-secondary); }
+        .sighting-modal:not(.manual-mode) .manual-only { display: none !important; }
+        .sighting-modal.manual-mode #modalPreviewImg:not([src]),
+        .sighting-modal.manual-mode #modalPreviewImg[src=""] { display: none; }
+        .sighting-modal.manual-mode #modalPreviewImg:not([src=""]) ~ #modalManualImageBtn { display: none; }
+        .sighting-modal.manual-mode #modalSave { display: none; }
+        .modal-photo-picker {
+            width: 160px; height: 100px; flex-shrink: 0;
+            display: inline-flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 0.25rem;
+            background: var(--bg-secondary); border: 2px dashed var(--accent-primary);
+            border-radius: 8px; cursor: pointer; padding: 0.5rem;
+            color: var(--text-primary); font-family: 'Sora', sans-serif;
+            font-size: 0.85rem; line-height: 1.2; text-align: center;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .modal-photo-picker:hover { background: var(--bg-tertiary); border-color: var(--accent-secondary); }
+        .modal-photo-picker .photo-icon { font-size: 1.6rem; }
+        .modal-photo-picker .photo-text small { color: var(--text-secondary); font-size: 0.7rem; font-weight: 400; }
 
         .modal-field { margin-bottom: 0.75rem; }
         .modal-field label { display: block; font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 0.25rem; }
@@ -1052,10 +1070,19 @@ All rights reserved. No redistribution, modification, or reuse without written p
             <h3 style="margin-top:0.75rem;">📍 New Sighting</h3>
             <div class="modal-preview">
                 <img id="modalPreviewImg" src="">
+                <button type="button" class="modal-photo-picker manual-only" id="modalManualImageBtn">
+                    <span class="photo-icon">🖼️</span>
+                    <span class="photo-text">Choose Photo<br><small>(optional)</small></span>
+                </button>
                 <div class="modal-preview-info">
                     <div id="modalCoords"></div>
                     <div id="modalTime"></div>
                 </div>
+            </div>
+            <input type="file" id="modalManualImage" accept="image/*" style="display:none;">
+            <div class="modal-field-row manual-only">
+                <div class="modal-field"><label>Latitude</label><input type="number" id="modalManualLat" step="0.000001" placeholder="e.g. -36.848500"></div>
+                <div class="modal-field"><label>Longitude</label><input type="number" id="modalManualLon" step="0.000001" placeholder="e.g. 174.762100"></div>
             </div>
             <div class="modal-field"><label>Name</label><input type="text" id="modalName" placeholder="Sighting name"></div>
             <div class="modal-field">
@@ -1076,9 +1103,11 @@ All rights reserved. No redistribution, modification, or reuse without written p
             <div class="modal-field"><label>Density</label>
                 <select id="modalDensity">
                     <option value="">— Select —</option>
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
+                    <option value="None">None</option>
+                    <option value="Possible">Possible</option>
+                    <option value="Sparse">Sparse</option>
+                    <option value="Moderate">Moderate</option>
+                    <option value="Dense">Dense</option>
                 </select>
             </div>
             <div class="modal-field"><label>Other Biota (if not listed)</label><input type="text" id="modalBiotaOther" placeholder="e.g. Sea cucumber, Starfish"></div>
@@ -1280,6 +1309,9 @@ All rights reserved. No redistribution, modification, or reuse without written p
         <button data-action="transect-start">Start Transect</button>
         <button data-action="transect-end">End Transect</button>
         <button data-action="waypoint-add">Add Waypoint</button>
+        <button data-action="sighting-add">Add Manual Sighting</button>
+        <button data-action="sighting-edit">Edit Sighting</button>
+        <button data-action="sighting-delete">Delete Sighting</button>
         <button data-action="gps-waypoint-add">Route Leg</button>
         <button data-action="route-point-add">Add Route Point</button>
         <button data-action="waypoint-rename">Rename Waypoint</button>
@@ -1326,6 +1358,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
         const STATUS_POLL_INTERVAL = 3000;
         const BIOTA_OPTIONS = ['Caulerpa Exotic','Brown Algae','Fan Worm','Kelp','Seaweed','Urchin','Sponge','Shellfish','Fish','Barren'];
         const BENTHIC_OPTIONS = ['Sand', 'Mud', 'Rock', 'Reef', 'Cobble', 'Shell hash', 'Seagrass', 'Mixed', 'Other'];
+        const DENSITY_OPTIONS = ['None', 'Possible', 'Sparse', 'Moderate', 'Dense'];
         const OVERLAY_TRACK_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'];
         const OVERLAY_OPACITY_OPTIONS = [
             { value: 0.35, label: '35%' },
@@ -1388,6 +1421,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
         let mpiCanLayerGroup = null, rahuiLayerGroup = null, restrictedZonesLayerGroup = null;
         let wmpSightingsLayerGroup = null, inatCaulerpaLayerGroup = null, priorityZonesLayerGroup = null;
         let caulerpaLayerGroup = null, caulerpaLayerActive = false;
+        let nztmGridLayer = null;
         let overlayTracks = [], overlayTrackLayerGroup = null;
         const BOUNDARY_ATTACH_KM = 0.012; // ~12 meters
         const ROUTE_CONTEXT_ATTACH_KM = 0.003; // ~3 meters — must be nearly on the line
@@ -1407,6 +1441,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
         let routeLegBoxIgnoreClickUntil = 0;
         let ctxBoundaryLabelIdx = null;
         let ctxBoundarySegIdx = null;
+        let ctxSightingId = null;
         let ctxOnRuler = false;
         let ctxOnTrack = false;
         let ctxLatLng = null;
@@ -1424,9 +1459,13 @@ All rights reserved. No redistribution, modification, or reuse without written p
             const hasRouteWithLeg = Array.isArray(gpsMission?.waypoints) && gpsMission.waypoints.length > 1;
             const onRouteEndpoint = ctxGpsWaypointId ? isRouteEndpointWaypointId(ctxGpsWaypointId) : false;
             const hasBoundaryTarget = (ctxBoundaryLabelIdx != null || ctxBoundarySegIdx != null);
+            const hasSightingTarget = !!ctxSightingId && sightings.some(s => String(s.id) === String(ctxSightingId));
             const visibilityByAction = {
                 'waypoint-delete': () => !!ctxWaypointId,
                 'waypoint-rename': () => !!ctxWaypointId,
+                'sighting-add': () => !!ctxLatLng && !(ctxOnCursor || ctxWaypointId || ctxGpsWaypointId || ctxOnRouteLeg || ctxOnRuler || hasSightingTarget),
+                'sighting-edit': () => hasSightingTarget,
+                'sighting-delete': () => hasSightingTarget,
                 'gps-waypoint-delete': () => !!ctxGpsWaypointId,
                 'route-waypoint-properties': () => !!ctxGpsWaypointId,
                 'route-pattern-insert': () => !!ctxGpsWaypointId,
@@ -1453,7 +1492,9 @@ All rights reserved. No redistribution, modification, or reuse without written p
             };
             ctxMenu.querySelectorAll('button').forEach(btn => {
                 const a = btn.dataset.action;
-                const isVisible = visibilityByAction[a] ? visibilityByAction[a]() : !ctxOnCursor;
+                const isVisible = hasSightingTarget && !['sighting-edit', 'sighting-delete'].includes(a)
+                    ? false
+                    : (visibilityByAction[a] ? visibilityByAction[a]() : !ctxOnCursor);
                 setElementVisible(btn, isVisible);
             });
             ctxMenuOpenedAt = performance.now();
@@ -1988,6 +2029,179 @@ All rights reserved. No redistribution, modification, or reuse without written p
             const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
+        const NZTM_A = 6378137, NZTM_F = 1 / 298.257222101;
+        const NZTM_K0 = 0.9996, NZTM_LON0 = 173 * Math.PI / 180;
+        const NZTM_E0 = 1600000, NZTM_N0 = 10000000;
+        const NZTM_E2 = 2 * NZTM_F - NZTM_F * NZTM_F;
+        function latLonToNZTM(lat, lon) {
+            const e2 = NZTM_E2, e4 = e2 * e2, e6 = e4 * e2, ep2 = e2 / (1 - e2);
+            const phi = lat * Math.PI / 180, lam = lon * Math.PI / 180;
+            const dlam = lam - NZTM_LON0;
+            const sinp = Math.sin(phi), cosp = Math.cos(phi), tanp = Math.tan(phi);
+            const n = NZTM_A / Math.sqrt(1 - e2 * sinp * sinp);
+            const t = tanp * tanp, c = ep2 * cosp * cosp, a = cosp * dlam;
+            const m = NZTM_A * (
+                (1 - e2 / 4 - 3 * e4 / 64 - 5 * e6 / 256) * phi
+                - (3 * e2 / 8 + 3 * e4 / 32 + 45 * e6 / 1024) * Math.sin(2 * phi)
+                + (15 * e4 / 256 + 45 * e6 / 1024) * Math.sin(4 * phi)
+                - (35 * e6 / 3072) * Math.sin(6 * phi)
+            );
+            const easting = NZTM_E0 + NZTM_K0 * n * (
+                a + (1 - t + c) * Math.pow(a, 3) / 6
+                + (5 - 18 * t + t * t + 72 * c - 58 * ep2) * Math.pow(a, 5) / 120
+            );
+            const northing = NZTM_N0 + NZTM_K0 * (
+                m + n * tanp * (
+                    a * a / 2
+                    + (5 - t + 9 * c + 4 * c * c) * Math.pow(a, 4) / 24
+                    + (61 - 58 * t + t * t + 600 * c - 330 * ep2) * Math.pow(a, 6) / 720
+                )
+            );
+            return [easting, northing];
+        }
+        function nztmToLatLon(easting, northing) {
+            const e2 = NZTM_E2, e4 = e2 * e2, e6 = e4 * e2, ep2 = e2 / (1 - e2);
+            const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
+            const m = (northing - NZTM_N0) / NZTM_K0;
+            const mu = m / (NZTM_A * (1 - e2 / 4 - 3 * e4 / 64 - 5 * e6 / 256));
+            const phi1 = mu
+                + (3 * e1 / 2 - 27 * Math.pow(e1, 3) / 32) * Math.sin(2 * mu)
+                + (21 * e1 * e1 / 16 - 55 * Math.pow(e1, 4) / 32) * Math.sin(4 * mu)
+                + (151 * Math.pow(e1, 3) / 96) * Math.sin(6 * mu)
+                + (1097 * Math.pow(e1, 4) / 512) * Math.sin(8 * mu);
+            const sinp1 = Math.sin(phi1), cosp1 = Math.cos(phi1), tanp1 = Math.tan(phi1);
+            const c1 = ep2 * cosp1 * cosp1;
+            const t1 = tanp1 * tanp1;
+            const n1 = NZTM_A / Math.sqrt(1 - e2 * sinp1 * sinp1);
+            const r1 = NZTM_A * (1 - e2) / Math.pow(1 - e2 * sinp1 * sinp1, 1.5);
+            const d = (easting - NZTM_E0) / (n1 * NZTM_K0);
+            const phi = phi1 - (n1 * tanp1 / r1) * (
+                d * d / 2
+                - (5 + 3 * t1 + 10 * c1 - 4 * c1 * c1 - 9 * ep2) * Math.pow(d, 4) / 24
+                + (61 + 90 * t1 + 298 * c1 + 45 * t1 * t1 - 252 * ep2 - 3 * c1 * c1) * Math.pow(d, 6) / 720
+            );
+            const lam = NZTM_LON0 + (
+                d
+                - (1 + 2 * t1 + c1) * Math.pow(d, 3) / 6
+                + (5 - 2 * c1 + 28 * t1 - 3 * c1 * c1 + 8 * ep2 + 24 * t1 * t1) * Math.pow(d, 5) / 120
+            ) / cosp1;
+            return [phi * 180 / Math.PI, lam * 180 / Math.PI];
+        }
+        function chooseNztmGridSpacing(zoom) {
+            if (zoom >= 17) return 100;
+            if (zoom >= 15) return 250;
+            if (zoom >= 13) return 1000;
+            if (zoom >= 11) return 5000;
+            if (zoom >= 9) return 10000;
+            return 50000;
+        }
+        function formatNztmGridLabel(metres) {
+            return metres >= 1000 ? `${metres / 1000}k` : `${metres}`;
+        }
+        function rebuildNztmGrid() {
+            if (!nztmGridLayer || !map || !map.hasLayer(nztmGridLayer)) return;
+            nztmGridLayer.clearLayers();
+            const b = map.getBounds();
+            const corners = [
+                latLonToNZTM(b.getSouth(), b.getWest()),
+                latLonToNZTM(b.getNorth(), b.getWest()),
+                latLonToNZTM(b.getNorth(), b.getEast()),
+                latLonToNZTM(b.getSouth(), b.getEast())
+            ];
+            const minE = Math.min(...corners.map(c => c[0]));
+            const maxE = Math.max(...corners.map(c => c[0]));
+            const minN = Math.min(...corners.map(c => c[1]));
+            const maxN = Math.max(...corners.map(c => c[1]));
+            const spacing = chooseNztmGridSpacing(map.getZoom());
+            const startE = Math.floor(minE / spacing) * spacing;
+            const endE = Math.ceil(maxE / spacing) * spacing;
+            const startN = Math.floor(minN / spacing) * spacing;
+            const endN = Math.ceil(maxN / spacing) * spacing;
+            const stepsE = (endE - startE) / spacing;
+            const stepsN = (endN - startN) / spacing;
+            if (stepsE * stepsN > 4000 || stepsE + stepsN > 400) return;
+            const lineStyle = { color: '#374151', weight: 1, opacity: 0.4, dashArray: '3,4', interactive: false };
+            const labelEvery = (stepsE > 16 || stepsN > 16) ? 5 : 1;
+            const labelHtml = txt => `<div style="background:rgba(255,255,255,0.85);padding:1px 4px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#333;border:1px solid rgba(0,0,0,0.2);white-space:nowrap;line-height:1.1;">${txt}</div>`;
+            const samples = 6;
+            let eIdx = 0;
+            for (let e = startE; e <= endE; e += spacing, eIdx++) {
+                const pts = [];
+                for (let i = 0; i <= samples; i++) pts.push(nztmToLatLon(e, startN + (endN - startN) * i / samples));
+                L.polyline(pts, lineStyle).addTo(nztmGridLayer);
+                if (eIdx % labelEvery === 0) {
+                    const ll = nztmToLatLon(e, startN + (endN - startN) * 0.5);
+                    L.marker(ll, { icon: L.divIcon({ html: labelHtml(`E ${formatNztmGridLabel(e)}`), className: 'nztm-label', iconSize: null, iconAnchor: [0, 0] }), interactive: false }).addTo(nztmGridLayer);
+                }
+            }
+            let nIdx = 0;
+            for (let n = startN; n <= endN; n += spacing, nIdx++) {
+                const pts = [];
+                for (let i = 0; i <= samples; i++) pts.push(nztmToLatLon(startE + (endE - startE) * i / samples, n));
+                L.polyline(pts, lineStyle).addTo(nztmGridLayer);
+                if (nIdx % labelEvery === 0) {
+                    const ll = nztmToLatLon(startE + (endE - startE) * 0.5, n);
+                    L.marker(ll, { icon: L.divIcon({ html: labelHtml(`N ${formatNztmGridLabel(n)}`), className: 'nztm-label', iconSize: null, iconAnchor: [0, 0] }), interactive: false }).addTo(nztmGridLayer);
+                }
+            }
+        }
+        function normalizeDensityLevel(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+            const compatibility = { low: 'Sparse', medium: 'Moderate', high: 'Dense' };
+            const lower = raw.toLowerCase();
+            if (compatibility[lower]) return compatibility[lower];
+            const match = DENSITY_OPTIONS.find(option => option.toLowerCase() === lower);
+            return match || raw;
+        }
+        function popupHasValue(value) {
+            if (value == null) return false;
+            if (Array.isArray(value)) return value.length > 0;
+            if (typeof value === 'object') return Object.keys(value).length > 0;
+            const text = String(value).trim();
+            return text !== '' && text !== '—' && text.toLowerCase() !== 'null' && text.toLowerCase() !== 'undefined';
+        }
+        function popupLabelFromKey(key) {
+            return String(key || '')
+                .replace(/[_-]+/g, ' ')
+                .replace(/([a-z])([A-Z])/g, '$1 $2')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .replace(/\b\w/g, c => c.toUpperCase());
+        }
+        function popupValueToText(value) {
+            if (!popupHasValue(value)) return '';
+            if (Array.isArray(value)) {
+                if (value.every(item => item == null || ['string', 'number', 'boolean'].includes(typeof item))) return value.join(', ');
+                return JSON.stringify(value);
+            }
+            if (typeof value === 'object') return JSON.stringify(value);
+            return String(value);
+        }
+        function appendFeatureMetadataRows(parts, feature, handledKeys = []) {
+            const props = feature?.properties || {};
+            const skip = new Set([
+                'fields', 'description_fields', 'extended_data', 'style', 'style_url', 'description_html',
+                'scores', 'photo_url', 'url', 'official_info_url', 'legal_ref_url', 'source_url', 'source_file',
+                ...handledKeys
+            ].map(key => String(key).toLowerCase()));
+            const rows = [];
+            const seen = new Set();
+            const addRow = (key, value) => {
+                const lower = String(key || '').toLowerCase();
+                if (!key || skip.has(lower) || seen.has(lower) || !popupHasValue(value)) return;
+                const text = popupValueToText(value);
+                if (!text) return;
+                const shortText = text.length > 260 ? `${text.slice(0, 257)}...` : text;
+                rows.push(`<tr><td style="padding:1px 8px 1px 0;color:#4b5563;vertical-align:top;">${escapeXml(popupLabelFromKey(key))}</td><td style="padding:1px 0;vertical-align:top;">${escapeXml(shortText)}</td></tr>`);
+                seen.add(lower);
+            };
+            [props.fields, props.description_fields, props.extended_data, props].forEach(source => {
+                if (!source || typeof source !== 'object' || Array.isArray(source)) return;
+                Object.entries(source).forEach(([key, value]) => addRow(key, value));
+            });
+            if (rows.length) parts.push(`<table style="margin-top:0.35rem;font-size:0.78rem;border-collapse:collapse;">${rows.join('')}</table>`);
+        }
         function getEventClientPoint(evt) {
             const oe = evt?.originalEvent || evt?.domEvent || evt;
             const t = oe?.touches?.[0] || oe?.changedTouches?.[0];
@@ -2114,7 +2328,8 @@ All rights reserved. No redistribution, modification, or reuse without written p
             const freeParts = [];
             parts.forEach((p) => {
                 if (/^Benthic:/i.test(p)) res.benthic = p.replace(/^Benthic:/i,'').trim();
-                else if (/^Density:/i.test(p)) res.density = p.replace(/^Density:/i,'').trim();
+                else if (/^Density:/i.test(p)) res.density = normalizeDensityLevel(p.replace(/^Density:/i,'').trim());
+                else if (/^Caulerpa Level:/i.test(p)) res.density = normalizeDensityLevel(p.replace(/^Caulerpa Level:/i,'').trim());
                 else {
                     const tokens = p.split(',').map(s=>s.trim()).filter(Boolean);
                     const matched = [], unmatched = [];
@@ -2136,6 +2351,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
             });
             if (freeParts.length) res.notes = freeParts[0];
             if (freeParts.length > 1 && !res.biotaOther) res.biotaOther = freeParts.slice(1).join(' | ');
+            res.density = normalizeDensityLevel(res.density);
             return res;
         }
         function deriveSightingNumber(name, fallback = 1) {
@@ -2498,7 +2714,16 @@ All rights reserved. No redistribution, modification, or reuse without written p
                         const p = feature?.properties || {};
                         const zone = p.zone || 'Priority Zone';
                         const pri = p.priority || '?';
-                        layer.bindPopup(`<div class="mpi-popup-title">${zone}</div><div style="margin-top:0.3rem;"><strong>Priority:</strong> ${pri}</div>`, { maxWidth: 320 });
+                        const score = p.total_score != null ? p.total_score : '';
+                        const band = p.priority_score_band || '';
+                        const priColor = { High: '#dc2626', Medium: '#f59e0b', Low: '#6b7280' }[pri] || '#6b7280';
+                        const parts = [`<div class="mpi-popup-title">${escapeXml(zone)}</div>`];
+                        parts.push(`<div style="margin-top:0.3rem;"><strong>Priority:</strong> <span style="color:${priColor}; font-weight:700;">${escapeXml(pri)}</span>${score !== '' ? ` (score: ${escapeXml(score)}${band ? ', band ' + escapeXml(band) : ''})` : ''}</div>`);
+                        if (p.rationale) parts.push(`<div style="margin-top:0.3rem; font-size:0.82rem;">${escapeXml(p.rationale)}</div>`);
+                        if (p.key_factors?.length) parts.push(`<div style="margin-top:0.25rem; font-size:0.78rem; color:#4b5563;"><strong>Key factors:</strong> ${escapeXml(p.key_factors.join(', '))}</div>`);
+                        if (p.known_infestations?.length) parts.push(`<div style="margin-top:0.25rem; font-size:0.78rem; color:#dc2626;"><strong>Known infestations:</strong> ${escapeXml(p.known_infestations.join(', '))}</div>`);
+                        appendFeatureMetadataRows(parts, feature, ['zone', 'priority', 'total_score', 'priority_score_band', 'rationale', 'key_factors', 'known_infestations']);
+                        layer.bindPopup(parts.join(''), { maxWidth: 360 });
                         layer.bindTooltip(`${zone} — ${pri}`, { sticky: true });
                         return;
                     }
@@ -2506,11 +2731,16 @@ All rights reserved. No redistribution, modification, or reuse without written p
                         const p = feature?.properties || {};
                         const sp = p.species || 'Caulerpa';
                         const exotic = sp.toLowerCase().includes('brachypus') || sp.toLowerCase().includes('parvifolia') || sp.toLowerCase().includes('taxifolia');
-                        const parts = [`<div class="mpi-popup-title">${sp}</div>`];
+                        const parts = [`<div class="mpi-popup-title">${escapeXml(sp)}</div>`];
+                        if (p.common_name) parts.push(`<div style="font-size:0.82rem; color:#6b7280;">${escapeXml(p.common_name)}</div>`);
                         if (exotic) parts.push(`<div style="margin-top:0.3rem; color:#dc2626; font-weight:700;">Exotic species</div>`);
-                        if (p.observed_on) parts.push(`<div><strong>Observed:</strong> ${p.observed_on}</div>`);
-                        if (p.place) parts.push(`<div><strong>Location:</strong> ${p.place}</div>`);
-                        if (p.url) parts.push(`<div style="margin-top:0.3rem;"><a href="${p.url}" target="_blank" rel="noopener noreferrer">View on iNaturalist</a></div>`);
+                        if (p.observed_on) parts.push(`<div><strong>Observed:</strong> ${escapeXml(p.observed_on)}</div>`);
+                        if (p.quality_grade) parts.push(`<div><strong>Quality:</strong> ${escapeXml(p.quality_grade)}</div>`);
+                        if (p.place) parts.push(`<div><strong>Location:</strong> ${escapeXml(p.place)}</div>`);
+                        if (p.observer) parts.push(`<div><strong>Observer:</strong> ${escapeXml(p.observer)}</div>`);
+                        if (p.photo_url) parts.push(`<div style="margin-top:0.4rem;"><img src="${escapeXml(p.photo_url)}" style="max-width:200px; max-height:150px; border-radius:4px;"></div>`);
+                        if (p.url) parts.push(`<div style="margin-top:0.3rem;"><a href="${escapeXml(p.url)}" target="_blank" rel="noopener noreferrer">View on iNaturalist</a></div>`);
+                        appendFeatureMetadataRows(parts, feature, ['species', 'common_name', 'observed_on', 'quality_grade', 'place', 'observer']);
                         layer.bindPopup(parts.join(''), { maxWidth: 280 });
                         layer.bindTooltip(`${sp}${p.observed_on ? ' — ' + p.observed_on : ''}`, { sticky: true });
                         return;
@@ -2518,21 +2748,44 @@ All rights reserved. No redistribution, modification, or reuse without written p
                     if (target === 'wmpSightings') {
                         const f = feature?.properties?.fields || feature?.properties?.description_fields || {};
                         const siteId = feature?.properties?.name || '';
+                        const method = f.method || '';
+                        const agency = f.agency_or_group || '';
+                        const depthStart = f.depth_start;
+                        const depthEnd = f.depth_end;
+                        const bottomTemp = f.bottom_temp_c;
+                        const surfaceTemp = f.surface_temp_c;
                         const caulerpa = String(f.exotic_caulerpa_y_n_review || 'N').trim();
+                        const biota = f.biota_observed || '';
+                        const benthic = f.benthic_description || '';
+                        const notes = f.notes || '';
+                        const layerName = feature?.properties?.layer || '';
                         const statusMap = { Y: 'Yes', S: 'Suspect', R: 'Review', N: 'No' };
                         const statusLabel = statusMap[String(caulerpa).toUpperCase()] || caulerpa;
                         const statusColor = { Y: '#dc2626', S: '#f59e0b', R: '#f97316', N: '#22c55e' }[String(caulerpa).toUpperCase()] || '#6b7280';
-                        layer.bindPopup(`<div class="mpi-popup-title">WMP Site ${siteId}</div><div style="margin-top:0.3rem;"><strong>Caulerpa:</strong> <span style="color:${statusColor}; font-weight:700;">${statusLabel}</span></div>`, { maxWidth: 320 });
+                        const parts = [`<div class="mpi-popup-title">WMP Site ${escapeXml(siteId)}</div>`];
+                        if (layerName) parts.push(`<div style="font-size:0.82rem; color:#6b7280;">${escapeXml(layerName)}</div>`);
+                        parts.push(`<div style="margin-top:0.3rem;"><strong>Caulerpa:</strong> <span style="color:${statusColor}; font-weight:700;">${escapeXml(statusLabel)}</span></div>`);
+                        if (method || agency) parts.push(`<div><strong>Method:</strong> ${escapeXml(method)}${agency ? ' (' + escapeXml(agency) + ')' : ''}</div>`);
+                        if (depthStart != null) parts.push(`<div><strong>Depth:</strong> ${escapeXml(depthStart)}${depthEnd != null ? ' - ' + escapeXml(depthEnd) : ''} m</div>`);
+                        if (bottomTemp != null || surfaceTemp != null) parts.push(`<div><strong>Temp:</strong>${surfaceTemp != null ? ' surface ' + escapeXml(surfaceTemp) + '°C' : ''}${bottomTemp != null ? ' bottom ' + escapeXml(bottomTemp) + '°C' : ''}</div>`);
+                        if (biota) parts.push(`<div style="margin-top:0.3rem;"><strong>Biota:</strong> ${escapeXml(biota)}</div>`);
+                        if (benthic) parts.push(`<div><strong>Benthic:</strong> ${escapeXml(benthic)}</div>`);
+                        if (notes) parts.push(`<div style="margin-top:0.25rem; font-size:0.82rem; color:#4b5563;"><em>${escapeXml(notes)}</em></div>`);
+                        appendFeatureMetadataRows(parts, feature, ['name', 'layer', 'exotic_caulerpa_y_n_review', 'method', 'agency_or_group', 'depth_start', 'depth_end', 'bottom_temp_c', 'surface_temp_c', 'biota_observed', 'benthic_description', 'notes']);
+                        layer.bindPopup(parts.join(''), { maxWidth: 340 });
                         layer.bindTooltip(`Site ${siteId}`, { sticky: true });
                         return;
                     }
                     const p = feature?.properties || {};
                     const name = p.Name || p.name || cfg.label;
                     const displayLabel = p.display_label || p.ZoneLabel || '';
-                    const popupParts = [`<div class="mpi-popup-title">${name}</div>`];
-                    if (displayLabel) popupParts.push(`<div>${displayLabel}</div>`);
-                    if (p.UpdateNote) popupParts.push(`<div style="margin-top:0.25rem; font-size:0.78rem; color:#4b5563;">${p.UpdateNote}</div>`);
-                    if (p.official_info_url) popupParts.push(`<div style="margin-top:0.3rem;"><a href="${p.official_info_url}" target="_blank" rel="noopener noreferrer">Official info</a></div>`);
+                    const popupParts = [`<div class="mpi-popup-title">${escapeXml(name)}</div>`];
+                    if (displayLabel) popupParts.push(`<div>${escapeXml(displayLabel)}</div>`);
+                    if (p.Description) popupParts.push(`<div>${escapeXml(p.Description)}</div>`);
+                    if (p.Activities) popupParts.push(`<div style="margin-top:0.35rem;">${escapeXml(p.Activities)}</div>`);
+                    if (p.UpdateNote) popupParts.push(`<div style="margin-top:0.25rem; font-size:0.78rem; color:#4b5563;">${escapeXml(p.UpdateNote)}</div>`);
+                    if (p.official_info_url) popupParts.push(`<div style="margin-top:0.3rem;"><a href="${escapeXml(p.official_info_url)}" target="_blank" rel="noopener noreferrer">Official info</a></div>`);
+                    appendFeatureMetadataRows(popupParts, feature, ['name', 'Name', 'display_label', 'ZoneLabel', 'Description', 'Activities', 'UpdateNote']);
                     layer.bindPopup(popupParts.join(''), { maxWidth: 340 });
                     layer.bindTooltip(name, { sticky: true });
                 }
@@ -2668,6 +2921,8 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 const linkEl = node.getElementsByTagName('link')[0];
                 const isTransectWpt = (name && name.toLowerCase().includes('transect') && (name.toLowerCase().includes('start') || name.toLowerCase().includes('end'))) || /^Transect:/i.test(desc);
                 if (isTransectWpt) return;
+                const isGeotrackerStop = /^Stop for\b/i.test(name) && node.getElementsByTagNameNS('*', 'meta').length > 0;
+                if (isGeotrackerStop) return;
                 const isUserWaypoint = /^User waypoint$/i.test(desc) || /Pin,?\s*Yellow/i.test(sym);
                 if (isUserWaypoint) {
                     waypoints.push({ name, lat, lon });
@@ -3224,7 +3479,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 L.DomEvent.preventDefault(e);
                 L.DomEvent.stopPropagation(e);
                 if (routeDrawing) { stopRouteDrawing(); return; }
-                ctxWaypointId = wp.id; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false; ctxBoundaryLabelIdx = null; ctxBoundarySegIdx = null; ctxOnRuler = false; ctxOnTrack = false; ctxOnCursor = false;
+                ctxWaypointId = wp.id; ctxSightingId = null; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false; ctxBoundaryLabelIdx = null; ctxBoundarySegIdx = null; ctxOnRuler = false; ctxOnTrack = false; ctxOnCursor = false;
                 ctxLatLng = e.latlng;
                 const clientX = e.originalEvent?.clientX || e.domEvent?.clientX || 0;
                 const clientY = e.originalEvent?.clientY || e.domEvent?.clientY || 0;
@@ -3466,7 +3721,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                 m.bindTooltip(span, { permanent: true, direction: 'top', offset: [0, -10], opacity: 0.8 }).openTooltip();
                 const openBoundaryAreaMenu = (latlng, originalEvent = null) => {
                     if (!latlng) return;
-                    ctxWaypointId = null; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false;
+                    ctxWaypointId = null; ctxSightingId = null; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false;
                     ctxBoundaryLabelIdx = i;
                     ctxBoundarySegIdx = i;
                     ctxOnRuler = false;
@@ -3584,7 +3839,7 @@ All rights reserved. No redistribution, modification, or reuse without written p
                     if (!segs.length) return;
                     const idx = nearestBoundarySegmentIndex(ll.lat, ll.lng, segs);
                     if (idx < 0) return;
-                    ctxWaypointId = null; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false;
+                    ctxWaypointId = null; ctxSightingId = null; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false;
                     ctxBoundaryLabelIdx = idx;
                     ctxBoundarySegIdx = idx;
                     ctxOnRuler = false;
@@ -4599,6 +4854,8 @@ ${trkpts.join('\n')}
                 const sym = symEl ? symEl.textContent : '';
                 const isTransectWpt = (name && name.toLowerCase().includes('transect') && (name.toLowerCase().includes('start') || name.toLowerCase().includes('end'))) || /^Transect:/i.test(desc);
                 if (isTransectWpt) continue;
+                const isGeotrackerStop = /^Stop for\b/i.test(name) && w.getElementsByTagNameNS('*', 'meta').length > 0;
+                if (isGeotrackerStop) continue;
                 // User waypoints have desc "User waypoint" or sym "Pin, Yellow"
                 const isUserWaypoint = /^User waypoint$/i.test(desc.trim()) || /Pin,?\s*Yellow/i.test(sym);
                 if (isUserWaypoint) {
@@ -4778,6 +5035,7 @@ ${trkpts.join('\n')}
             priorityZonesLayerGroup = null;
             caulerpaLayerGroup = null;
             caulerpaLayerActive = false;
+            nztmGridLayer = null;
             map = L.map('map').setView([gpxData[0].lat, gpxData[0].lon], 15);
             map.on('movestart', () => { if (!isProgrammaticPan) lastUserPanAt = Date.now(); });
             const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
@@ -4791,11 +5049,13 @@ ${trkpts.join('\n')}
             inatCaulerpaLayerGroup = L.layerGroup();
             priorityZonesLayerGroup = L.layerGroup();
             caulerpaLayerGroup = L.layerGroup();
+            nztmGridLayer = L.layerGroup();
             L.control.layers(
                 { "OpenStreetMap": osm },
                 {
                     "LINZ Aerial (NZ)": linz,
                     "Nautical Chart": sea,
+                    "NZTM Grid": nztmGridLayer,
                     "Coastal Names": placenameCoastalLayerGroup,
                     "Restricted Zones": restrictedZonesLayerGroup,
                     "Priority Zones": priorityZonesLayerGroup,
@@ -4852,7 +5112,7 @@ ${trkpts.join('\n')}
                 L.DomEvent.preventDefault(e);
                 L.DomEvent.stopPropagation(e);
                 if (routeDrawing) { stopRouteDrawing(); return; }
-                ctxLatLng = e.latlng; ctxWaypointId = null; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false; ctxBoundaryLabelIdx = null; ctxBoundarySegIdx = null; ctxOnRuler = false; ctxOnTrack = false; ctxOnCursor = true;
+                ctxLatLng = e.latlng; ctxWaypointId = null; ctxSightingId = null; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false; ctxBoundaryLabelIdx = null; ctxBoundarySegIdx = null; ctxOnRuler = false; ctxOnTrack = false; ctxOnCursor = true;
                 const clientX = e.originalEvent?.clientX || e.domEvent?.clientX || 0;
                 const clientY = e.originalEvent?.clientY || e.domEvent?.clientY || 0;
                 showContextMenu(clientX, clientY);
@@ -4876,6 +5136,7 @@ ${trkpts.join('\n')}
                 const useBoundary = !!boundaryHit && !useRoute;
                 ctxLatLng = evt.latlng;
                 ctxWaypointId = null;
+                ctxSightingId = null;
                 ctxGpsWaypointId = null;
                 ctxRouteLegIdx = useRoute ? routeHit.idx : null;
                 ctxOnRouteLeg = useRoute;
@@ -4984,6 +5245,7 @@ ${trkpts.join('\n')}
                     caulerpaLayerActive = true;
                     await fetchAndRenderCaulerpa();
                 }
+                if (e.layer === nztmGridLayer) rebuildNztmGrid();
             });
             map.on('overlayremove', e => {
                 if (e.layer === placenameCoastalLayerGroup && placenameCoastalLayerGroup) placenameCoastalLayerGroup.clearLayers();
@@ -4997,10 +5259,12 @@ ${trkpts.join('\n')}
                     caulerpaLayerActive = false;
                     caulerpaLayerGroup.clearLayers();
                 }
+                if (e.layer === nztmGridLayer && nztmGridLayer) nztmGridLayer.clearLayers();
             });
             map.on('zoomend moveend', async () => {
                 if (placenameCoastalLayerGroup) renderPlacenameLayers();
                 if (caulerpaLayerActive) await fetchAndRenderCaulerpa();
+                if (nztmGridLayer && map.hasLayer(nztmGridLayer)) rebuildNztmGrid();
             });
             if (!_docListenersBound) {
                 _docListenersBound = true;
@@ -5033,6 +5297,9 @@ ${trkpts.join('\n')}
                 const btnStart = ctxMenu.querySelector('[data-action="transect-start"]');
                 const btnEnd = ctxMenu.querySelector('[data-action="transect-end"]');
                 const btnWaypoint = ctxMenu.querySelector('[data-action="waypoint-add"]');
+                const btnSightingAdd = ctxMenu.querySelector('[data-action="sighting-add"]');
+                const btnSightingEdit = ctxMenu.querySelector('[data-action="sighting-edit"]');
+                const btnSightingDelete = ctxMenu.querySelector('[data-action="sighting-delete"]');
                 const btnGpsWaypointAdd = ctxMenu.querySelector('[data-action="gps-waypoint-add"]');
                 const btnRoutePointAdd = ctxMenu.querySelector('[data-action="route-point-add"]');
                 const btnWaypointRename = ctxMenu.querySelector('[data-action="waypoint-rename"]');
@@ -5056,6 +5323,9 @@ ${trkpts.join('\n')}
                 if (btnStart) btnStart.addEventListener('click', () => { ctxMenu.style.display='none'; if (ctxLatLng) addTransectStartAtLatLng(ctxLatLng); });
                 if (btnEnd) btnEnd.addEventListener('click', () => { ctxMenu.style.display='none'; if (ctxLatLng) addTransectEndAtLatLng(ctxLatLng); });
                 if (btnWaypoint) btnWaypoint.addEventListener('click', () => { ctxMenu.style.display='none'; if (ctxLatLng) { const wp={id:uuid(),lat:ctxLatLng.lat,lon:ctxLatLng.lng,name:`Waypoint ${waypoints.length+1}`}; waypoints.push(wp); addWaypointMarker(wp); markUnsaved(); } });
+                if (btnSightingAdd) btnSightingAdd.addEventListener('click', () => { ctxMenu.style.display='none'; if (ctxLatLng) openManualSightingModal(ctxLatLng.lat, ctxLatLng.lng); });
+                if (btnSightingEdit) btnSightingEdit.addEventListener('click', () => { ctxMenu.style.display='none'; if (ctxSightingId) editSighting(ctxSightingId); });
+                if (btnSightingDelete) btnSightingDelete.addEventListener('click', () => { ctxMenu.style.display='none'; if (ctxSightingId) deleteSighting({ stopPropagation() {} }, ctxSightingId); });
                 if (btnGpsWaypointAdd) btnGpsWaypointAdd.addEventListener('click', () => {
                     ctxMenu.style.display='none';
                     if (!ctxLatLng) return;
@@ -5291,7 +5561,7 @@ ${trkpts.join('\n')}
                         L.DomEvent.stopPropagation(evt);
                         if (!ctxMenu) return;
                         ctxLatLng = evt.latlng;
-                        ctxWaypointId = null; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false;
+                        ctxWaypointId = null; ctxSightingId = null; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false;
                         ctxBoundaryLabelIdx = null;
                         ctxBoundarySegIdx = null;
                         ctxOnRuler = true;
@@ -5309,7 +5579,7 @@ ${trkpts.join('\n')}
                             L.DomEvent.stopPropagation(evt);
                             if (!ctxMenu) return;
                             ctxLatLng = evt.latlng;
-                            ctxWaypointId = null; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false;
+                            ctxWaypointId = null; ctxSightingId = null; ctxGpsWaypointId = null; ctxRouteLegIdx = null; ctxOnRouteLeg = false;
                             ctxBoundaryLabelIdx = null;
                             ctxBoundarySegIdx = null;
                             ctxOnRuler = true;
@@ -5541,6 +5811,8 @@ ${trkpts.join('\n')}
                 document.getElementById('modalBenthic').value = '';
                 document.getElementById('modalDensity').value = '';
                 document.querySelectorAll('#modalBiotaGroup input[type="checkbox"]').forEach(cb => cb.checked = false);
+                sightingModalCard?.classList.remove('manual-mode');
+                if (sightingModalHeader) sightingModalHeader.textContent = '📍 New Sighting';
                 document.getElementById('sightingModal').classList.add('active');
                 if (typeof positionModalDefault === 'function') positionModalDefault();
                 document.getElementById('modalNotes').focus();
@@ -5548,6 +5820,80 @@ ${trkpts.join('\n')}
         }
 
         fullscreenSightingBtn.addEventListener('click', triggerAddSighting);
+
+        function openManualSightingModal(lat, lon) {
+            const id = generateUUID();
+            const name = `Sighting ${sightingCounter}`;
+            let ts = Date.now();
+            if (gpxData?.length) {
+                let bestKm = Infinity, bestTs = null;
+                for (const p of gpxData) {
+                    const d = getDistanceFromLatLonInKm(lat, lon, p.lat, p.lon);
+                    if (d < bestKm) { bestKm = d; bestTs = p.timestamp; }
+                }
+                if (bestTs != null && bestKm < 5) ts = bestTs;
+            }
+            pendingSighting = {
+                id, markerNumber: sightingCounter, name,
+                videoTime: 0, timestamp: ts,
+                lat, lon, notes: '', image: null,
+                biota: [], biotaOther: '', benthic: '', density: '',
+                _manual: true,
+                blob: null, dataUrl: null, objectUrl: null
+            };
+            const modal = document.getElementById('sightingModal');
+            const card = modal.querySelector('.sighting-modal');
+            if (card) card.classList.add('manual-mode');
+            const previewImg = document.getElementById('modalPreviewImg');
+            if (previewImg) previewImg.src = '';
+            document.getElementById('modalCoords').textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+            document.getElementById('modalTime').textContent = new Date(ts).toLocaleTimeString('en-NZ',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+            document.getElementById('modalManualLat').value = lat.toFixed(6);
+            document.getElementById('modalManualLon').value = lon.toFixed(6);
+            document.getElementById('modalManualImage').value = '';
+            document.getElementById('modalName').value = name;
+            document.getElementById('modalNotes').value = '';
+            document.getElementById('modalBiotaOther').value = '';
+            document.getElementById('modalBenthic').value = '';
+            document.getElementById('modalDensity').value = '';
+            document.querySelectorAll('#modalBiotaGroup input[type="checkbox"]').forEach(cb => cb.checked = false);
+            if (sightingModalHeader) sightingModalHeader.textContent = '📍 New Manual Sighting';
+            modal.classList.add('active');
+            if (typeof positionModalDefault === 'function') positionModalDefault();
+            document.getElementById('modalNotes').focus();
+        }
+
+        document.getElementById('modalManualImageBtn')?.addEventListener('click', () => {
+            document.getElementById('modalManualImage')?.click();
+        });
+        document.getElementById('modalManualImage')?.addEventListener('change', (e) => {
+            const file = e.target.files?.[0];
+            if (!file || !pendingSighting?._manual) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const dataUrl = ev.target.result;
+                document.getElementById('modalPreviewImg').src = dataUrl;
+                pendingSighting.dataUrl = dataUrl;
+                pendingSighting.blob = file;
+                const safeName = (file.name || 'manual-sighting.jpg').replace(/[^A-Za-z0-9._-]+/g, '-');
+                pendingSighting.image = `${pendingSighting.id.slice(0, 8)}-${safeName}`;
+                if (pendingSighting.objectUrl) URL.revokeObjectURL(pendingSighting.objectUrl);
+                pendingSighting.objectUrl = URL.createObjectURL(file);
+            };
+            reader.readAsDataURL(file);
+        });
+        ['modalManualLat', 'modalManualLon'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', () => {
+                if (!pendingSighting?._manual) return;
+                const lat = parseFloat(document.getElementById('modalManualLat').value);
+                const lon = parseFloat(document.getElementById('modalManualLon').value);
+                if (Number.isFinite(lat)) pendingSighting.lat = lat;
+                if (Number.isFinite(lon)) pendingSighting.lon = lon;
+                if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                    document.getElementById('modalCoords').textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                }
+            });
+        });
 
         videoFsBtn.addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen(); else videoFsContainer.requestFullscreen().catch(()=>{}); });
 
@@ -5614,11 +5960,18 @@ ${trkpts.join('\n')}
             pendingSighting.biota = Array.from(document.querySelectorAll('#modalBiotaGroup input:checked')).map(cb=>cb.value);
             pendingSighting.biotaOther = document.getElementById('modalBiotaOther').value.trim();
             pendingSighting.benthic = document.getElementById('modalBenthic').value;
-            pendingSighting.density = document.getElementById('modalDensity').value || '';
-            loadedImages[pendingSighting.image] = pendingSighting.dataUrl;
-            capturedBlobs[pendingSighting.id] = pendingSighting.blob;
-            const s = { ...pendingSighting }; delete s.objectUrl; delete s.blob; delete s.dataUrl;
+            pendingSighting.density = normalizeDensityLevel(document.getElementById('modalDensity').value || '');
+            if (pendingSighting._manual) {
+                const mLat = parseFloat(document.getElementById('modalManualLat').value);
+                const mLon = parseFloat(document.getElementById('modalManualLon').value);
+                if (Number.isFinite(mLat)) pendingSighting.lat = mLat;
+                if (Number.isFinite(mLon)) pendingSighting.lon = mLon;
+            }
+            if (pendingSighting.image && pendingSighting.dataUrl) loadedImages[pendingSighting.image] = pendingSighting.dataUrl;
+            if (pendingSighting.blob) capturedBlobs[pendingSighting.id] = pendingSighting.blob;
+            const s = { ...pendingSighting }; delete s.objectUrl; delete s.blob; delete s.dataUrl; delete s._manual;
             sightingCounter++; sightings.push(s); assignSightingsToTransects(); renderSightings(); addSightingToMap(s); renderTimelineTicks();
+            updateArchiveAvailability();
             markUnsaved();
             const downloadUrl = pendingSighting.objectUrl;
             if (download && downloadUrl) {
@@ -5626,7 +5979,11 @@ ${trkpts.join('\n')}
             } else if (downloadUrl) {
                 URL.revokeObjectURL(downloadUrl);
             }
-            document.getElementById('sightingModal').classList.remove('active'); pendingSighting = null;
+            const modal = document.getElementById('sightingModal');
+            modal.classList.remove('active');
+            modal.querySelector('.sighting-modal')?.classList.remove('manual-mode');
+            if (sightingModalHeader) sightingModalHeader.textContent = '📍 New Sighting';
+            pendingSighting = null;
             switchTab('sightings'); toast(`Sighting saved: ${s.name}`,'success');
         };
 
@@ -5635,7 +5992,11 @@ ${trkpts.join('\n')}
 
         document.getElementById('modalCancel').addEventListener('click', () => {
             if (pendingSighting?.objectUrl) URL.revokeObjectURL(pendingSighting.objectUrl);
-            pendingSighting = null; document.getElementById('sightingModal').classList.remove('active');
+            pendingSighting = null;
+            const modal = document.getElementById('sightingModal');
+            modal.classList.remove('active');
+            modal.querySelector('.sighting-modal')?.classList.remove('manual-mode');
+            if (sightingModalHeader) sightingModalHeader.textContent = '📍 New Sighting';
         });
 
         function addSightingToMap(s) {
@@ -5646,6 +6007,7 @@ ${trkpts.join('\n')}
                 L.DomEvent.stopPropagation(e);
                 ctxLatLng = e.latlng;
                 ctxWaypointId = null;
+                ctxSightingId = s.id;
                 ctxGpsWaypointId = null;
                 ctxRouteLegIdx = null;
                 ctxOnRouteLeg = false;
@@ -5665,7 +6027,7 @@ ${trkpts.join('\n')}
                 el.appendChild(document.createTextNode(new Date(s.timestamp).toLocaleTimeString('en-NZ')));
                 el.appendChild(document.createElement('br'));
                 el.appendChild(document.createTextNode(s.notes || 'No notes'));
-                const tags = [...(s.biota||[]), s.biotaOther, s.benthic].filter(Boolean);
+                const tags = [...(s.biota||[]), s.biotaOther, s.benthic, s.density ? `Density: ${s.density}` : ''].filter(Boolean);
                 if (tags.length) { el.appendChild(document.createElement('br')); const em = document.createElement('em'); em.style.cssText = 'font-size:0.75rem;color:#6c757d;'; em.textContent = tags.join(', '); el.appendChild(em); }
                 if (s.image) {
                     const src = loadedImages[s.image];
@@ -6262,6 +6624,7 @@ ${trkpts.join('\n')}
                     L.DomEvent.stopPropagation(e);
                     if (routeDrawing) { stopRouteDrawing(); return; }
                     ctxWaypointId = null;
+                    ctxSightingId = null;
                     ctxGpsWaypointId = null;
                     ctxBoundaryLabelIdx = null;
                     ctxBoundarySegIdx = null;
@@ -6431,6 +6794,7 @@ ${trkpts.join('\n')}
                 gpsRouteDragLastPreviewTs = 0;
                 if (map.dragging) map.dragging.enable();
                 ctxWaypointId = null;
+                ctxSightingId = null;
                 ctxGpsWaypointId = null;
                 ctxBoundaryLabelIdx = null;
                 ctxBoundarySegIdx = null;
@@ -7100,6 +7464,7 @@ ${trkpts.join('\n')}
                     if (routeDrawing) { stopRouteDrawing(); return; }
                     ctxGpsWaypointId = wp.id;
                     ctxWaypointId = null;
+                    ctxSightingId = null;
                     ctxRouteLegIdx = null; ctxOnRouteLeg = false;
                     ctxBoundaryLabelIdx = null;
                     ctxBoundarySegIdx = null;
@@ -8856,6 +9221,8 @@ ${trkpts.join('\n')}
                 if (pendingSighting?.objectUrl) URL.revokeObjectURL(pendingSighting.objectUrl);
                 pendingSighting = null;
                 sightingModal.classList.remove('active');
+                sightingModal.querySelector('.sighting-modal')?.classList.remove('manual-mode');
+                if (sightingModalHeader) sightingModalHeader.textContent = '📍 New Sighting';
             }
             if ((e.key === 'Delete' || e.key === 'Backspace') &&
                 !e.ctrlKey && !e.metaKey && !e.altKey &&
@@ -8895,7 +9262,7 @@ ${trkpts.join('\n')}
         }
 
         function deleteSighting(ev, id) {
-            ev.stopPropagation();
+            if (ev?.stopPropagation) ev.stopPropagation();
             const s = sightings.find(b=>String(b.id)===String(id)); const name = s?.name || 'this sighting';
             const overlay = document.createElement('div');
             overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
@@ -8913,6 +9280,7 @@ ${trkpts.join('\n')}
                 const mm = sightingMarkers.find(m=>String(m.id)===String(id));
                 if (mm) { map.removeLayer(mm.marker); sightingMarkers = sightingMarkers.filter(m=>String(m.id)!==String(id)); }
                 if (capturedBlobs[id]) delete capturedBlobs[id];
+                if (String(ctxSightingId) === String(id)) ctxSightingId = null;
                 assignSightingsToTransects();
                 renderSightings(); markUnsaved(); renderTimelineTicks();
                 toast(`Deleted: ${name}`, 'info');
@@ -9037,7 +9405,7 @@ ${trkpts.join('\n')}
             archiveDisabled = false;
         }
         function updateArchiveAvailability() {
-            const missingMain = sightings.filter(s => !capturedBlobs[s.id] && !(s.image && loadedImageFiles[s.image]));
+            const missingMain = sightings.filter(s => s.image && !capturedBlobs[s.id] && !loadedImageFiles[s.image]);
             const missingOverlay = getOverlaySightingsForExport().filter(s => s?.image && !loadedImageFiles[s.image]);
             const missing = [...missingMain, ...missingOverlay];
             if (missing.length === 0) enableArchive();
@@ -9048,7 +9416,7 @@ ${trkpts.join('\n')}
             const exportOverlaySightings = getOverlaySightingsForExport();
             if (!sightings.length && !exportOverlaySightings.length) { alert('No sightings to package.'); return; }
             const missingImages = sightings
-                .filter(s => !capturedBlobs[s.id] && !(s.image && loadedImageFiles[s.image]))
+                .filter(s => s.image && !capturedBlobs[s.id] && !loadedImageFiles[s.image])
                 .map(s => s.name || s.image || `Sighting ${s.id}`);
             exportOverlaySightings
                 .filter(s => s?.image && !loadedImageFiles[s.image])
@@ -9151,16 +9519,14 @@ ${trkpts.join('\n')}
         // ============================================================================
         function updateSubmitButton() {
             const ok = gpxData?.length>0 && sightings.length>0 && document.getElementById('inputSurveyName').value.trim() && document.getElementById('inputSiteCode').value.trim();
-            const hasImage = sightings.some(s => capturedBlobs[s.id] || loadedImageFiles[s.image]) || Object.keys(loadedImageFiles).length>0;
             if (btnSubmit) {
-                btnSubmit.disabled = !(ok && agentIsOnline && (hasImage || !sightings.length));
+                btnSubmit.disabled = !(ok && agentIsOnline);
                 const reasons = [];
                 if (!gpxData?.length) reasons.push('Load a GPX file');
                 if (!sightings.length) reasons.push('Add at least one sighting');
                 if (!document.getElementById('inputSurveyName').value.trim()) reasons.push('Enter Survey Name');
                 if (!document.getElementById('inputSiteCode').value.trim()) reasons.push('Enter Site Code');
                 if (!agentIsOnline) reasons.push('Agent offline');
-                if (!hasImage && sightings.length) reasons.push('Load images for sightings');
                 btnSubmit.title = btnSubmit.disabled ? `Export unavailable: ${reasons.join('; ')}` : 'Export to agent';
             }
             btnDownload.style.display = currentJobId ? 'block' : 'none';
@@ -9177,16 +9543,6 @@ ${trkpts.join('\n')}
             progressBarContainer.classList.add('visible'); progressBar.style.width='0%'; progressBar.className='progress-bar';
             submitStatus.textContent = 'Preparing...';
             try {
-                // Require at least one image (captured or loaded) to avoid backend 422
-                const hasAnyImage = sightings.some(s => capturedBlobs[s.id] || loadedImageFiles[s.image]) || Object.keys(loadedImageFiles).length>0;
-                if (!hasAnyImage && sightings.length) {
-                    alert('Load or capture at least one image for the sightings before exporting.');
-                    submitStatus.textContent = 'Images required';
-                    btnSubmit.disabled = false;
-                    progressBarContainer.classList.remove('visible');
-                    return;
-                }
-
                 // Always submit the latest in-memory edits (survey + sightings)
                 const currentGpx = generateGPXWithWaypoints();
                 const gpxBlob = new Blob([currentGpx],{type:'application/gpx+xml'});
@@ -9310,7 +9666,7 @@ ${trkpts.join('\n')}
                             biota: s.biota || [],
                             biotaOther: s.biotaOther || '',
                             benthic: s.benthic || '',
-                            density: s.density || ''
+                            density: normalizeDensityLevel(s.density || '')
                         }))
                     })),
                     bookmarks: sightings.map(s=>({
@@ -9323,8 +9679,10 @@ ${trkpts.join('\n')}
                         notes: s.notes || '',
                         image: s.image || 'sighting.jpg',
                         biota: s.biota || [],
+                        biotaOther: s.biotaOther || '',
                         benthic: s.benthic || '',
-                        density: s.density || '',
+                        density: normalizeDensityLevel(s.density || ''),
+                        transectId: s.transectId || null,
                     }))
                 };
                 const images = [];
@@ -9539,6 +9897,13 @@ ${trkpts.join('\n')}
             setGridPlannerStatus('Draw a boundary leg, then generate a grid.');
             updateGpsMissionInfo();
             hasUnsavedChanges=false;
+            if (pendingSighting?.objectUrl) URL.revokeObjectURL(pendingSighting.objectUrl);
+            pendingSighting = null;
+            if (sightingModal) {
+                sightingModal.classList.remove('active');
+                sightingModal.querySelector('.sighting-modal')?.classList.remove('manual-mode');
+            }
+            if (sightingModalHeader) sightingModalHeader.textContent = '📍 New Sighting';
             // [FIX 1] Clean up blob URLs from loadedImages on reset
             Object.values(loadedImages).forEach(u=>{if(typeof u==='string'&&u.startsWith('blob:'))URL.revokeObjectURL(u);});
             loadedImages={}; loadedImageFiles={};
@@ -9573,7 +9938,10 @@ ${trkpts.join('\n')}
             // If a sighting modal capture is in progress, warn before discarding it
             if (pendingSighting && !confirm('You have an unsaved sighting capture in progress. Unload video and discard it?')) return;
             if (pendingSighting?.objectUrl) URL.revokeObjectURL(pendingSighting.objectUrl);
-            pendingSighting = null; document.getElementById('sightingModal').classList.remove('active');
+            pendingSighting = null;
+            document.getElementById('sightingModal').classList.remove('active');
+            document.querySelector('#sightingModal .sighting-modal')?.classList.remove('manual-mode');
+            if (sightingModalHeader) sightingModalHeader.textContent = '📍 New Sighting';
 
             clearVideo();
             isSynced = false;
@@ -9629,6 +9997,19 @@ ${trkpts.join('\n')}
                 const otherLabel = document.createElement('label'); otherLabel.textContent = 'Other Biota'; otherField.appendChild(otherLabel);
                 const otherInput = document.createElement('input'); otherInput.type = 'text'; otherInput.id = 'lbBiotaOther'; otherInput.value = s.biotaOther || ''; otherField.appendChild(otherInput);
                 info.appendChild(otherField);
+                // Density select
+                const densityField = document.createElement('div'); densityField.className = 'lb-field';
+                const densityLabel = document.createElement('label'); densityLabel.textContent = 'Density'; densityField.appendChild(densityLabel);
+                const densitySelect = document.createElement('select'); densitySelect.id = 'lbDensity';
+                const densityEmptyOpt = document.createElement('option'); densityEmptyOpt.value = ''; densityEmptyOpt.textContent = '—'; densitySelect.appendChild(densityEmptyOpt);
+                DENSITY_OPTIONS.forEach(optionValue => {
+                    const opt = document.createElement('option');
+                    opt.value = optionValue;
+                    opt.textContent = optionValue;
+                    if (normalizeDensityLevel(s.density) === optionValue) opt.selected = true;
+                    densitySelect.appendChild(opt);
+                });
+                densityField.appendChild(densitySelect); info.appendChild(densityField);
                 // Benthic select (BENTHIC_OPTIONS are hardcoded trusted constants)
                 const benthicRow = document.createElement('div'); benthicRow.style.cssText = 'display:flex;gap:0.5rem;';
                 const benthicField = document.createElement('div'); benthicField.className = 'lb-field'; benthicField.style.flex = '1';
@@ -9660,6 +10041,7 @@ ${trkpts.join('\n')}
             s.notes = document.getElementById('lbNotes')?.value || '';
             s.biota = Array.from(document.querySelectorAll('#lbBiotaGroup input:checked')).map(cb=>cb.value);
             s.biotaOther = document.getElementById('lbBiotaOther')?.value?.trim() || '';
+            s.density = normalizeDensityLevel(document.getElementById('lbDensity')?.value || '');
             s.benthic = document.getElementById('lbBenthic')?.value || '';
             markUnsaved(); renderSightings(); renderTimelineTicks(); toast('Sighting updated', 'success');
         }

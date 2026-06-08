@@ -71,3 +71,32 @@ Designed for:
 
 Copyright © 2026 Steve Harris\
 Licensed under GNU GPL v3.0 or later
+
+
+Check out this from Qgroundcontrol repo
+
+Main files:
+
+Survey grid generation: src/MissionManager/SurveyComplexItem.cc
+Survey item definition: src/MissionManager/SurveyComplexItem.h
+Shared transect mission logic: src/MissionManager/TransectStyleComplexItem.cc/.h
+
+Core idea:
+
+Convert survey polygon GPS points to local NED metres.
+Build a bounding rectangle.
+Generate parallel rotated lines at gridSpacing.
+Clip/intersect those lines with the polygon.
+Convert clipped line ends back to GPS.
+Reorder into a lawnmower pattern.
+Turn those into MAVLink mission waypoints.
+
+The juicy bit is here: QGC converts polygon vertices with QGCGeo::convertGeoToNed, reads gridAngle and gridSpacing, then builds rotated transect lines.
+
+Then it intersects those lines with the polygon, converts results back with convertNedToGeo, and adjusts entry/lawnmower ordering.
+
+For your own tender/ROV planner, that file is the best reference. Search inside it for:
+
+_rebuildTransectsPhase1WorkerSinglePolygon
+
+That’s basically the grid generator.

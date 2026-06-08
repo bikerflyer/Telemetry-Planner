@@ -290,6 +290,52 @@ Useful practical outcomes:
 - the route JSON can be handed to automation or Node-RED without scraping GPX
 - GPX remains available for map interoperability and review
 
+## Share and Archive Security Hardening
+
+For survey ZIP round-tripping and share-link imports, a practical security baseline should protect operators without making normal archive use annoying.
+
+Recommended hardening features:
+
+- `Strict ZIP allowlist`
+  - Only accept expected survey file types such as `.gpx`, `.jpg`, `.jpeg`, `.png`, `.webp`, and known planner subpaths such as `overlays/*.gpx`.
+- `Archive shape validation`
+  - Reject unexpected nested content, duplicate normalized filenames, path traversal patterns, control characters, and very long filenames.
+- `Zip bomb protection`
+  - Enforce limits on file count, single-file size, total uncompressed size, and suspicious compression ratios.
+- `GPX sanity validation`
+  - Reject malformed XML, DTD or entity declarations, absurdly large text fields, and unreasonable waypoint or trackpoint counts.
+- `Safe import rendering`
+  - Treat imported metadata, notes, and sighting fields as untrusted text and avoid rendering them as raw HTML.
+- `Viewer-side import limits`
+  - Apply archive limits in the browser as well as on the backend, so locally opened ZIPs cannot freeze the UI or exhaust memory.
+- `Normalized archive rebuild`
+  - Where possible, parse accepted files and re-emit a clean normalized archive structure rather than trusting arbitrary ZIP contents verbatim.
+- `Clear operator feedback`
+  - If an archive is rejected, return a direct reason such as unsupported file type, too many files, GPX invalid, or archive too large.
+
+Reasonable baseline limits for this workflow:
+
+- `Allowed file types`
+  - `.gpx`, `.jpg`, `.jpeg`, `.png`, `.webp`
+- `Maximum file count`
+  - about `200`
+- `Maximum GPX files`
+  - about `10`
+- `Maximum image files`
+  - about `150`
+- `Maximum single GPX size`
+  - about `5 MB`
+- `Maximum single image size`
+  - about `10 MB`
+- `Maximum uncompressed archive size`
+  - about `150 MB`
+
+Practical intent:
+
+- prevent executable or irrelevant content from hitching a ride inside survey archives
+- reduce risk of browser lockups or decompression-bomb style imports
+- keep normal survey sharing and archive restore simple for operators
+
 ## Export Behaviour
 
 Planner route export includes:
